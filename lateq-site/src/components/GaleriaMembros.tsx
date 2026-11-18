@@ -129,9 +129,25 @@ export function GaleriaMembros() {
     })
   }
 
+  const animarHover = (escala: number) => {
+    const palco = quadro.current
+    if (!palco) return
+    gsap.to(palco, {
+      scale: escala,
+      duration: 0.35,
+      ease: 'power2.out',
+      overwrite: 'auto',
+    })
+  }
+
   return (
     <div className="galeria-membros" ref={galeria} role="region" aria-label="Galeria de Membros" aria-roledescription="carrossel">
-      <div className="galeria-quadro" ref={quadro}>
+      <div
+        className="galeria-quadro"
+        ref={quadro}
+        onMouseEnter={() => contextSafe(animarHover)(1.04)}
+        onMouseLeave={() => contextSafe(animarHover)(1)}
+      >
         {imagens.map(({ arquivo, largura, altura, alt, recorte }, indice) => (
           <div key={arquivo} className="galeria-slide" aria-hidden={indice !== ativa}>
             <img

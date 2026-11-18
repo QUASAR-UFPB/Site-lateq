@@ -111,7 +111,26 @@ export function useScrollMotion(secoes: string[]) {
 
     gsap.from('[data-intro]', { y: 32, opacity: 0, duration: 0.9, ease: 'power3.out', stagger: 0.1, delay: 0.1 })
 
+    const limparHover: (() => void)[] = []
+    el.querySelectorAll<HTMLAnchorElement>('.noticia-link').forEach((link) => {
+      const imagem = link.querySelector('img')
+      if (!imagem) return
+      const entrar = () => {
+        gsap.to(imagem, { scale: 1.04, duration: 0.35, ease: 'power2.out', overwrite: 'auto' })
+      }
+      const sair = () => {
+        gsap.to(imagem, { scale: 1, duration: 0.35, ease: 'power2.out', overwrite: 'auto' })
+      }
+      link.addEventListener('mouseenter', entrar)
+      link.addEventListener('mouseleave', sair)
+      limparHover.push(() => {
+        link.removeEventListener('mouseenter', entrar)
+        link.removeEventListener('mouseleave', sair)
+      })
+    })
+
     return () => {
+      limparHover.forEach((fn) => fn())
       observador?.disconnect()
       smoother.current = null
     }
