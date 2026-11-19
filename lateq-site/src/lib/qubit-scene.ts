@@ -34,8 +34,7 @@ export function criarQubit(
   bloch.rotation.set(0.38, GIRO_INICIAL, 0)
   scene.add(bloch)
 
-  const corCss = getComputedStyle(host).getPropertyValue('--arte-cor').trim() || '#1a5140'
-  const cor = new THREE.Color(corCss)
+  const cor = new THREE.Color()
 
   const corpo = new THREE.Mesh(
     new THREE.SphereGeometry(0.995, 64, 48),
@@ -99,21 +98,31 @@ export function criarQubit(
 
   const rastroPos = new Float32Array(RASTRO * 3)
   const rastroCor = new Float32Array(RASTRO * 3)
-  const baseR = 0.56
-  const baseG = 0.82
-  const baseB = 0.65
-  for (let i = 0; i < RASTRO; i++) {
-    const brilho = Math.pow(i / (RASTRO - 1), 1.6)
-    rastroCor.set([
-      baseR + (cor.r - baseR) * brilho,
-      baseG + (cor.g - baseG) * brilho,
-      baseB + (cor.b - baseB) * brilho,
-    ], i * 3)
-  }
   const rastroGeo = new THREE.BufferGeometry()
   rastroGeo.setAttribute('position', new THREE.BufferAttribute(rastroPos, 3))
   rastroGeo.setAttribute('color', new THREE.BufferAttribute(rastroCor, 3))
   bloch.add(new THREE.Line(rastroGeo, new THREE.LineBasicMaterial({ vertexColors: true })))
+
+  const aplicarCores = () => {
+    const estilos = getComputedStyle(host)
+    cor.set(estilos.getPropertyValue('--arte-cor').trim() || '#1a5140')
+    for (const material of [fino, forte, eixoMat, vetor.material, ponta.material, aura.material]) {
+      material.color.copy(cor)
+    }
+    const corCssRastro = estilos.getPropertyValue('--arte-rastro').trim()
+    const corRastro = corCssRastro
+      ? new THREE.Color(corCssRastro)
+      : new THREE.Color().setRGB(0.56, 0.82, 0.65)
+    for (let i = 0; i < RASTRO; i++) {
+      const brilho = Math.pow(i / (RASTRO - 1), 1.6)
+      rastroCor.set([
+        corRastro.r + (cor.r - corRastro.r) * brilho,
+        corRastro.g + (cor.g - corRastro.g) * brilho,
+        corRastro.b + (cor.b - corRastro.b) * brilho,
+      ], i * 3)
+    }
+    rastroGeo.attributes.color.needsUpdate = true
+  }
 
   const posicaoEstado = (t: number) => estado(1.15 + 0.55 * Math.sin(t * 0.21), t * 0.55, 1.004)
   const preencherRastro = (t: number) => {
@@ -203,9 +212,14 @@ export function criarQubit(
     onFailure()
   }
   renderer.domElement.addEventListener('webglcontextlost', contextoPerdido)
+  aplicarCores()
   sincronizar()
 
   return {
+    atualizarCores() {
+      aplicarCores()
+      desenhar()
+    },
     setPausado(valor: boolean) {
       pausado = valor
       sincronizar()

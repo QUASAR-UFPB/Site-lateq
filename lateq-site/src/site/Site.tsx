@@ -1,4 +1,4 @@
-import type { MouseEvent } from 'react'
+import { useEffect, type MouseEvent } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ExternalLink, Icon } from '../components/ExternalLink'
 import { Logo, type VarianteLogo } from '../components/Logo'
@@ -8,6 +8,7 @@ import { GaleriaMembros } from '../components/GaleriaMembros'
 import { useScrollMotion } from './useScrollMotion'
 
 const variantesLogo: { id: VarianteLogo; rotulo: string }[] = [
+  { id: 'bc-civitas', rotulo: 'BC Civitas Medium' },
   { id: 'adobe', rotulo: 'Adobe Express' },
   { id: 'madimi', rotulo: 'Madimi One' },
   { id: 'audex', rotulo: 'Audex' },
@@ -30,12 +31,26 @@ const versoes: { rota: string; rotulo: string; arte: Arte | null }[] = [
   { rota: '/fundo', rotulo: 'Só fundo', arte: null },
 ]
 
+const paletas = [
+  { id: 'verde', rotulo: 'Verde' },
+  { id: 'dourado', rotulo: 'Dourado' },
+]
+
 export function Site({ arte }: { arte: Arte | null }) {
-  const { pathname, search } = useLocation()
+  const { pathname, search, hash } = useLocation()
   const parametros = new URLSearchParams(search)
   const logoAtual = parametros.get('logo')
-  const variante = variantesLogo.find((v) => v.id === logoAtual)?.id ?? variantesLogo[0].id
+  const variante = variantesLogo.find((v) => v.id === logoAtual)?.id ?? 'adobe'
+  const paletaAtual = parametros.get('paleta')
+  const paleta = paletas.find((p) => p.id === paletaAtual)?.id ?? paletas[0].id
   const { raiz, ativa, setAtiva, irPara } = useScrollMotion(idsSecoes)
+
+  useEffect(() => {
+    if (!raiz.current) return
+    const cor = getComputedStyle(raiz.current).getPropertyValue('--tom-escuro').trim()
+    if (cor) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', cor)
+  }, [paleta, raiz])
+
   const comParam = (chave: string, valor: string) => {
     const p = new URLSearchParams(search)
     p.set(chave, valor)
@@ -50,7 +65,7 @@ export function Site({ arte }: { arte: Arte | null }) {
   }
 
   return (
-    <div className="site" ref={raiz}>
+    <div className="site" data-paleta={paleta} ref={raiz}>
       <a className="skip" href="#conteudo" onClick={ir('conteudo')}>
         Pular para o conteúdo
       </a>
@@ -84,7 +99,7 @@ export function Site({ arte }: { arte: Arte | null }) {
               tabIndex={-1}
               aria-labelledby="titulo"
             >
-              {arte && <ArteHero key={arte} arte={arte} />}
+              {arte && <ArteHero key={arte} arte={arte} paleta={paleta} />}
               <div className="hero-copy">
                 <h1 id="titulo" data-intro>
                   <Logo variante={variante} className="lateq--hero" />
@@ -241,20 +256,36 @@ export function Site({ arte }: { arte: Arte | null }) {
       </div>
 
       <div className="dock">
-        <nav className="versoes" aria-label="Versões do protótipo">
-          {versoes.map((v) => (
-            <Link key={v.rota} to={comRota(v.rota)} aria-current={v.arte === arte ? 'page' : undefined}>
-              {v.rotulo}
-            </Link>
-          ))}
-        </nav>
-        <nav className="versoes" aria-label="Versões do logotipo">
+        <div className="dock-variantes">
+          <nav className="versoes" aria-label="Versões do protótipo">
+            {versoes.map((v) => (
+              <Link key={v.rota} to={comRota(v.rota)} aria-current={v.arte === arte ? 'page' : undefined}>
+                {v.rotulo}
+              </Link>
+            ))}
+          </nav>
+          <nav className="versoes" aria-label="Versões do logotipo">
+            <span className="versoes-rotulo" aria-hidden="true">
+              Logo
+            </span>
+            {variantesLogo.map((v) => (
+              <Link key={v.id} to={comParam('logo', v.id)} aria-current={variante === v.id ? 'page' : undefined}>
+                {v.rotulo}
+              </Link>
+            ))}
+          </nav>
+        </div>
+        <nav className="versoes" aria-label="Paletas de cores">
           <span className="versoes-rotulo" aria-hidden="true">
-            Logo
+            Paleta
           </span>
-          {variantesLogo.map((v) => (
-            <Link key={v.id} to={comParam('logo', v.id)} aria-current={variante === v.id ? 'page' : undefined}>
-              {v.rotulo}
+          {paletas.map((p) => (
+            <Link
+              key={p.id}
+              to={{ ...comParam('paleta', p.id), hash }}
+              aria-current={paleta === p.id ? 'page' : undefined}
+            >
+              {p.rotulo}
             </Link>
           ))}
         </nav>

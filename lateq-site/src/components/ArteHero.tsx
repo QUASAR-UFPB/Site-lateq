@@ -2,7 +2,11 @@ import { useEffect, useRef, useState } from 'react'
 
 export type Arte = 'qubit' | 'atomo'
 
-type Cena = { setPausado: (v: boolean) => void; dispose: () => void }
+type Cena = {
+  atualizarCores: () => void
+  setPausado: (v: boolean) => void
+  dispose: () => void
+}
 
 const nomes: Record<Arte, string> = { qubit: 'qubit', atomo: 'átomo' }
 
@@ -12,11 +16,11 @@ const Pausa = ({ pausado }: { pausado: boolean }) => (
   </svg>
 )
 
-export function ArteHero({ arte }: { arte: Arte }) {
+export function ArteHero({ arte, paleta }: { arte: Arte; paleta: string }) {
   const host = useRef<HTMLDivElement>(null)
   const rotulos = useRef<HTMLDivElement>(null)
   const cena = useRef<Cena | null>(null)
-  const [estado, setEstado] = useState<'carregando' | 'pronto' | 'indisponivel'>('carregando')
+  const [pronto, setPronto] = useState(false)
   const [pausado, setPausado] = useState(false)
 
   useEffect(() => {
@@ -25,7 +29,7 @@ export function ArteHero({ arte }: { arte: Arte }) {
       if (cancelado) return
       cena.current?.dispose()
       cena.current = null
-      setEstado('indisponivel')
+      setPronto(false)
     }
     const montar: Promise<(h: HTMLElement, r: HTMLElement) => Cena> =
       arte === 'atomo'
@@ -36,7 +40,7 @@ export function ArteHero({ arte }: { arte: Arte }) {
         if (cancelado || !host.current || !rotulos.current) return
         try {
           cena.current = criar(host.current, rotulos.current)
-          setEstado('pronto')
+          setPronto(true)
         } catch {
           falhar()
         }
@@ -49,6 +53,10 @@ export function ArteHero({ arte }: { arte: Arte }) {
     }
   }, [arte])
 
+  useEffect(() => {
+    cena.current?.atualizarCores()
+  }, [paleta])
+
   const alternar = () => {
     cena.current?.setPausado(!pausado)
     setPausado(!pausado)
@@ -56,12 +64,12 @@ export function ArteHero({ arte }: { arte: Arte }) {
 
   return (
     <>
-      <div className={`qubit-art arte-${arte} ${estado}`} aria-hidden="true">
+      <div className={`qubit-art arte-${arte}${pronto ? ' pronto' : ''}`} aria-hidden="true">
         <div className="qubit-glow" />
         <div className="qubit-renderer" ref={host} />
         <div className="qubit-labels" ref={rotulos} />
       </div>
-      {estado === 'pronto' && (
+      {pronto && (
         <button
           type="button"
           className="qubit-toggle"

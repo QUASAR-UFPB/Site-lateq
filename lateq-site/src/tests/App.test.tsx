@@ -106,7 +106,9 @@ describe('site do LATEQ', () => {
     renderAt('/?logo=corpta')
     expect(document.querySelector('.lateq--corpta')).toBeInTheDocument()
     const logos = within(screen.getByRole('navigation', { name: 'Versões do logotipo' }))
-    expect(logos.getAllByRole('link').map((link) => link.textContent)).toEqual(['Adobe Express', 'Madimi One', 'Audex', 'Corpta'])
+    expect(logos.getAllByRole('link').map((link) => link.textContent)).toEqual([
+      'BC Civitas Medium', 'Adobe Express', 'Madimi One', 'Audex', 'Corpta',
+    ])
     expect(logos.getByRole('link', { name: 'Corpta' })).toHaveAttribute('aria-current', 'page')
   })
 
@@ -116,6 +118,34 @@ describe('site do LATEQ', () => {
     expect(within(seletor).getByRole('link', { name: 'Adobe Express' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('heading', { level: 1 }).querySelector('.lateq--adobe .lateq-marca')).toBeInTheDocument()
     expect(document.querySelector('.hero')).toHaveClass('sem-arte')
+  })
+
+  it('seleciona BC Civitas Medium sem mudar a paleta', async () => {
+    renderAt('/fundo?paleta=dourado')
+    const seletor = within(screen.getByRole('navigation', { name: 'Versões do logotipo' }))
+    const civitas = seletor.getByRole('link', { name: 'BC Civitas Medium' })
+
+    expect(civitas).toHaveAttribute('href', '/fundo?paleta=dourado&logo=bc-civitas')
+    await userEvent.click(civitas)
+    expect(civitas).toHaveAttribute('aria-current', 'page')
+    expect(document.querySelector('.lateq--bc-civitas .lateq-txt')).toHaveTextContent('LATEQ')
+    expect(screen.getByRole('link', { name: 'Dourado' })).toHaveAttribute('aria-current', 'page')
+  })
+
+  it('alterna entre paletas na mesma versão de arte e logotipo', async () => {
+    renderAt('/fundo?logo=corpta&paleta=desconhecida')
+    const paletas = within(screen.getByRole('navigation', { name: 'Paletas de cores' }))
+    const verde = paletas.getByRole('link', { name: 'Verde' })
+    const dourado = paletas.getByRole('link', { name: 'Dourado' })
+
+    expect(verde).toHaveAttribute('aria-current', 'page')
+    expect(dourado).toHaveAttribute('href', '/fundo?logo=corpta&paleta=dourado')
+    await userEvent.click(dourado)
+    expect(dourado).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Corpta' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Só fundo' })).toHaveAttribute('aria-current', 'page')
+    await userEvent.click(verde)
+    expect(verde).toHaveAttribute('aria-current', 'page')
   })
 
   it('abre links externos com rel noopener e exibe logos e siglas nos parceiros', () => {

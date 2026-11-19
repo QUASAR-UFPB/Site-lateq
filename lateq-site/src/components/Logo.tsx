@@ -1,4 +1,4 @@
-export type VarianteLogo = 'adobe' | 'madimi' | 'audex' | 'corpta'
+export type VarianteLogo = 'adobe' | 'madimi' | 'audex' | 'corpta' | 'bc-civitas'
 
 export function Logo({ variante, className = '' }: { variante: VarianteLogo; className?: string }) {
   return (

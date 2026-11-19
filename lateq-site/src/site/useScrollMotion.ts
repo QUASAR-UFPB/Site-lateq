@@ -160,7 +160,6 @@ export function useScrollMotion(secoes: string[]) {
       focar()
     }
     window.history.replaceState(null, '', `#${id}`)
-    return alvo
   }
 
   return { raiz, ativa, setAtiva, irPara }

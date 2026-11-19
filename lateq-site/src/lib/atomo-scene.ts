@@ -48,8 +48,7 @@ export function criarAtomo(host: HTMLElement, onFailure: () => void) {
   const atomo = new THREE.Group()
   scene.add(atomo)
 
-  const corCss = getComputedStyle(host).getPropertyValue('--arte-cor').trim() || '#1a5140'
-  const cor = new THREE.Color(corCss)
+  const cor = new THREE.Color()
 
   const material = new THREE.ShaderMaterial({
     transparent: true,
@@ -70,6 +69,11 @@ export function criarAtomo(host: HTMLElement, onFailure: () => void) {
 
   const nucleo = new THREE.Mesh(estrela(0.12), new THREE.MeshBasicMaterial({ color: cor }))
   scene.add(nucleo)
+
+  const aplicarCores = () => {
+    cor.set(getComputedStyle(host).getPropertyValue('--arte-cor').trim() || '#1a5140')
+    nucleo.material.color.copy(cor)
+  }
 
   let frame = 0
   let ultimo = 0
@@ -129,9 +133,14 @@ export function criarAtomo(host: HTMLElement, onFailure: () => void) {
     onFailure()
   }
   renderer.domElement.addEventListener('webglcontextlost', contextoPerdido)
+  aplicarCores()
   sincronizar()
 
   return {
+    atualizarCores() {
+      aplicarCores()
+      desenhar()
+    },
     setPausado(valor: boolean) {
       pausado = valor
       sincronizar()

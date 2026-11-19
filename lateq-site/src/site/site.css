@@ -30,30 +30,31 @@ img {
 
 .site {
   --claro: #ffffff;
-  --jade-claro: #b7e5ba;
-  --jade-medio: #5ca87c;
-  --jade-vivo: #288760;
-  --jade-escuro: #1a5140;
-  --banda: color-mix(in oklab, var(--jade-claro) 22%, white);
-  --fg: var(--jade-escuro);
-  --muted: color-mix(in oklab, var(--jade-escuro) 88%, var(--jade-vivo));
-  --soft: var(--jade-vivo);
-  --line: color-mix(in oklab, var(--jade-escuro) 18%, transparent);
-  --focus: var(--jade-escuro);
-  --d-bg: var(--jade-escuro);
+  --tom-claro: #b7e5ba;
+  --tom-medio: #5ca87c;
+  --tom-intenso: #288760;
+  --tom-escuro: #1a5140;
+  --banda: color-mix(in oklab, var(--tom-claro) 22%, white);
+  --fg: var(--tom-escuro);
+  --muted: color-mix(in oklab, var(--tom-escuro) 88%, var(--tom-intenso));
+  --line: color-mix(in oklab, var(--tom-escuro) 18%, transparent);
+  --focus: var(--tom-escuro);
+  --d-bg: var(--tom-escuro);
   --d-fg: #ffffff;
-  --d-muted: var(--jade-claro);
-  --d-soft: var(--jade-claro);
-  --d-line: color-mix(in oklab, var(--jade-claro) 28%, transparent);
-  --risco: var(--jade-vivo);
-  --acento: var(--jade-vivo);
-  --rodape: var(--jade-escuro);
-  --dock: color-mix(in oklab, var(--jade-escuro) 96%, black);
-  --arte-cor: var(--jade-escuro);
-  --marca-texto: var(--jade-escuro);
-  --marca-simbolo-a: var(--jade-escuro);
-  --marca-simbolo-b: var(--jade-vivo);
-  --marca-simbolo-c: var(--jade-medio);
+  --d-muted: var(--tom-claro);
+  --d-line: color-mix(in oklab, var(--tom-claro) 28%, transparent);
+  --risco: var(--tom-intenso);
+  --acento: var(--tom-intenso);
+  --acento-rodape: var(--tom-intenso);
+  --rodape: var(--tom-escuro);
+  --dock: color-mix(in oklab, var(--tom-escuro) 96%, black);
+  --arte-cor: var(--tom-escuro);
+  --marca-texto: var(--tom-escuro);
+  --marca-simbolo-a: var(--tom-escuro);
+  --marca-simbolo-b: var(--tom-intenso);
+  --marca-simbolo-c: var(--tom-medio);
+  --marca-hero-c: var(--tom-medio);
+  --marca-rodape-c: var(--tom-intenso);
   --offset: 76px;
   --dock-distancia: 1rem;
   --bg: var(--claro);
@@ -64,12 +65,22 @@ img {
   font-size: 1.0625rem;
   -webkit-font-smoothing: antialiased;
 }
+.site[data-paleta='dourado'] {
+  --tom-claro: #dbc094;
+  --tom-medio: #d3af37;
+  --tom-intenso: #745515;
+  --tom-escuro: #473617;
+  --risco: var(--tom-medio);
+  --acento-rodape: var(--tom-medio);
+  --arte-rastro: var(--tom-medio);
+  --marca-hero-c: color-mix(in oklab, var(--tom-intenso) 82%, var(--tom-medio));
+  --marca-rodape-c: color-mix(in oklab, var(--tom-medio) 80%, var(--tom-intenso));
+}
 .footer,
 .dock {
   --bg: var(--d-bg);
   --fg: var(--d-fg);
   --muted: var(--d-muted);
-  --soft: var(--d-soft);
   --line: var(--d-line);
   --focus: var(--d-fg);
 }
@@ -112,18 +123,14 @@ img {
 }
 
 .topbar {
-  --bg: #ffffff;
-  --fg: var(--jade-escuro);
-  --muted: var(--jade-escuro);
-  --soft: var(--jade-vivo);
-  --line: color-mix(in oklab, var(--jade-escuro) 14%, transparent);
-  --focus: var(--jade-escuro);
+  --muted: var(--tom-escuro);
+  --line: color-mix(in oklab, var(--tom-escuro) 14%, transparent);
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 50;
   background: #ffffff;
   border-bottom: 1px solid var(--line);
-  box-shadow: 0 2px 12px color-mix(in oklab, var(--jade-escuro) 6%, transparent);
+  box-shadow: 0 2px 12px color-mix(in oklab, var(--tom-escuro) 6%, transparent);
 }
 .topbar-inner {
   display: flex;
@@ -201,6 +208,10 @@ img {
   font-family: 'Audex', 'IBM Plex Sans', sans-serif;
   letter-spacing: 0.01em;
 }
+.lateq--bc-civitas .lateq-txt {
+  font-family: 'bc-civitas', 'IBM Plex Sans', sans-serif;
+  font-weight: 500;
+}
 .lateq-sub {
   display: flex;
   flex-direction: column;
@@ -217,23 +228,15 @@ img {
 }
 .lateq--topo {
   font-size: 1.9rem;
-  --sub: 0.3em;
 }
 .lateq--hero {
   font-size: clamp(3.25rem, 10vw, 6rem);
   --sub: max(0.75rem, 0.16em);
   margin-bottom: 0.25rem;
 }
-.lateq--rodape {
-  font-size: 1.75rem;
-  --sub: 0.3em;
-}
 .lateq--adobe {
   max-width: 100%;
-  flex-direction: row;
-  align-items: center;
   gap: 0.45em;
-  color: var(--fg);
 }
 .lateq-marca {
   flex: none;
@@ -258,12 +261,9 @@ img {
 }
 
 .hero {
-  --bg: var(--jade-claro);
-  --fg: var(--jade-escuro);
-  --muted: color-mix(in oklab, var(--jade-escuro) 88%, var(--jade-vivo));
-  --soft: var(--jade-vivo);
-  --line: color-mix(in oklab, var(--jade-escuro) 22%, transparent);
-  --focus: var(--jade-escuro);
+  --bg: var(--tom-claro);
+  --line: color-mix(in oklab, var(--tom-escuro) 22%, transparent);
+  --marca-simbolo-c: var(--marca-hero-c);
   position: relative;
   display: flex;
   align-items: center;
@@ -273,12 +273,12 @@ img {
   padding: 7rem 0 clamp(6.5rem, 10vw, 8.5rem);
   color: var(--fg);
   background:
-    radial-gradient(50% 90% at 82% 48%, color-mix(in oklab, var(--jade-vivo) 22%, transparent) 0%, transparent 70%),
+    radial-gradient(50% 90% at 82% 48%, color-mix(in oklab, var(--tom-intenso) 22%, transparent) 0%, transparent 70%),
     linear-gradient(
       100deg,
-      color-mix(in oklab, var(--jade-claro) 55%, white) 0%,
-      var(--jade-claro) 46%,
-      color-mix(in oklab, var(--jade-medio) 78%, var(--jade-claro)) 100%
+      color-mix(in oklab, var(--tom-claro) 55%, white) 0%,
+      var(--tom-claro) 46%,
+      color-mix(in oklab, var(--tom-medio) 78%, var(--tom-claro)) 100%
     );
 }
 .hero::before {
@@ -424,10 +424,10 @@ img {
   gap: 0.5rem;
   min-height: 44px;
   padding: 0.4rem 1rem;
-  border: 1px solid color-mix(in oklab, var(--jade-escuro) 25%, transparent);
+  border: 1px solid color-mix(in oklab, var(--tom-escuro) 25%, transparent);
   border-radius: 999px;
   background: color-mix(in oklab, white 78%, transparent);
-  color: var(--jade-escuro);
+  color: var(--tom-escuro);
   font-size: 0.8125rem;
   font-weight: 500;
   cursor: pointer;
@@ -479,10 +479,10 @@ img {
 #membros {
   background: linear-gradient(
     180deg,
-    color-mix(in oklab, var(--jade-claro) 36%, white),
-    color-mix(in oklab, var(--jade-claro) 48%, white)
+    color-mix(in oklab, var(--tom-claro) 36%, white),
+    color-mix(in oklab, var(--tom-claro) 48%, white)
   );
-  border-block: 1px solid color-mix(in oklab, var(--jade-vivo) 24%, transparent);
+  border-block: 1px solid color-mix(in oklab, var(--tom-intenso) 24%, transparent);
 }
 .galeria-membros {
   --altura-disponivel: calc(100svh - var(--offset) - var(--altura-dock, 46px) - 17.75rem);
@@ -629,10 +629,11 @@ img {
   margin-top: 1.5rem;
 }
 .footer {
+  --acento: var(--acento-rodape);
   --marca-texto: #ffffff;
-  --marca-simbolo-a: var(--jade-claro);
-  --marca-simbolo-b: var(--jade-medio);
-  --marca-simbolo-c: var(--jade-vivo);
+  --marca-simbolo-a: var(--tom-claro);
+  --marca-simbolo-b: var(--tom-medio);
+  --marca-simbolo-c: var(--marca-rodape-c);
   border-top: 1px solid var(--line);
   background: var(--rodape);
   padding: 2.5rem 0 calc(var(--altura-dock, 46px) + var(--dock-distancia) + 1rem);
@@ -672,6 +673,12 @@ img {
   left: 1rem;
   bottom: var(--dock-distancia);
   display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.dock-variantes {
+  display: flex;
   flex-wrap: wrap;
   gap: 0.5rem;
 }
@@ -685,7 +692,7 @@ img {
 }
 .versoes-rotulo {
   padding: 0 0.4rem 0 0.85rem;
-  color: var(--soft);
+  color: var(--muted);
   font-size: 0.6875rem;
   font-weight: 600;
   letter-spacing: 0.1em;
@@ -777,11 +784,14 @@ img {
   .dock {
     left: 0.5rem;
     right: 0.5rem;
+  }
+  .dock-variantes {
+    max-width: 100%;
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
   }
-  .dock > * {
+  .dock-variantes > * {
     flex: none;
   }
 }
