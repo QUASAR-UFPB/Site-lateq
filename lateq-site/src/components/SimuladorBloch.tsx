@@ -104,7 +104,7 @@ export function SimuladorBloch({ paleta }: { paleta: string }) {
             (l) => {
               if (!cancelado) setLeitura(l)
             },
-            { estadoInicial: '|0>', precessaoInicial: false },
+            { estadoInicial: '|0>', precessaoInicial: false, vivido: true },
           )
           setPronto(true)
         } catch {

@@ -63,6 +63,17 @@ img {
   --marca-simbolo-c: var(--tom-medio);
   --marca-hero-c: var(--tom-medio);
   --marca-rodape-c: var(--tom-intenso);
+  /* Simulador da esfera de Bloch: palco escuro, eixos com cor própria (X, Y, Z) e vetor vívido. */
+  --sim-fundo: #0a1f18;
+  --sim-fundo-luz: #17402f;
+  --sim-esfera: #5ca87c;
+  --sim-grade: #b7e5ba;
+  --sim-vetor: #6dffbf;
+  --sim-rastro: #34c98c;
+  --sim-eixo-porta: #ffffff;
+  --sim-x: #ff6b6b;
+  --sim-y: #ffcf5a;
+  --sim-z: #5cb8ff;
   --offset: 76px;
   --dock-distancia: 1rem;
   --bg: var(--claro);
@@ -83,6 +94,16 @@ img {
   --arte-rastro: var(--tom-medio);
   --marca-hero-c: color-mix(in oklab, var(--tom-intenso) 82%, var(--tom-medio));
   --marca-rodape-c: color-mix(in oklab, var(--tom-medio) 80%, var(--tom-intenso));
+  /* Simulador: fundo café, vetor dourado; Y vira verde para não competir com o ouro. */
+  --sim-fundo: #1c1409;
+  --sim-fundo-luz: #3a2b12;
+  --sim-esfera: #d3af37;
+  --sim-grade: #ecd7a8;
+  --sim-vetor: #ffd54a;
+  --sim-rastro: #e0a92e;
+  --sim-x: #ff7a66;
+  --sim-y: #6fe3a1;
+  --sim-z: #6fb3ff;
 }
 .footer,
 .dock {
@@ -795,11 +816,43 @@ img {
   width: 100%;
   max-width: 360px;
   aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 1rem;
+  border: 1px solid color-mix(in oklab, var(--sim-grade) 22%, transparent);
+  background:
+    radial-gradient(70% 70% at 50% 45%, var(--sim-fundo-luz), transparent 75%),
+    var(--sim-fundo);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in oklab, white 4%, transparent),
+    0 18px 36px -22px color-mix(in oklab, var(--sim-fundo) 80%, transparent);
   opacity: 0;
   transition: opacity 0.8s ease;
 }
 .simulador-palco.pronto {
   opacity: 1;
+}
+.simulador-palco .qubit-glow {
+  inset: 18%;
+  background: radial-gradient(circle, color-mix(in oklab, var(--sim-vetor) 16%, transparent), transparent 70%);
+}
+.simulador-palco .qubit-labels span {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--sim-grade);
+  text-shadow: 0 1px 6px var(--sim-fundo);
+}
+.simulador-palco .qubit-labels span.eixo-x {
+  color: var(--sim-x);
+}
+.simulador-palco .qubit-labels span.eixo-y {
+  color: var(--sim-y);
+}
+.simulador-palco .qubit-labels span.eixo-z {
+  color: var(--sim-z);
+}
+.simulador-palco .qubit-labels span.destaque {
+  color: var(--sim-vetor);
+  font-weight: 700;
 }
 .simulador-dica {
   margin: 0 !important;

@@ -110,10 +110,16 @@ export function criarQubit(
   labelHost: HTMLElement,
   onFailure: () => void,
   onStateChange?: (leitura: LeituraQubit) => void,
-  opcoes?: { estadoInicial?: EstadoPreparado; precessaoInicial?: boolean },
+  opcoes?: {
+    estadoInicial?: EstadoPreparado
+    precessaoInicial?: boolean
+    /** Visual de alto contraste: eixos coloridos, seta sólida e cores lidas das variáveis --sim-*. */
+    vivido?: boolean
+  },
 ) {
+  const vivido = opcoes?.vivido ?? false
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' })
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, vivido ? 2 : 1.5))
   renderer.setClearColor(0x000000, 0)
   renderer.domElement.setAttribute('aria-hidden', 'true')
   host.appendChild(renderer.domElement)
@@ -121,6 +127,8 @@ export function criarQubit(
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 20)
   camera.position.set(2.35, 1.45, 3.15)
+  // No palco emoldurado do simulador, afasta a câmera para os rótulos |0⟩ e |1⟩ não encostarem na borda.
+  if (vivido) camera.position.multiplyScalar(1.14)
   camera.lookAt(0, 0, 0)
 
   const controls = new OrbitControls(camera, renderer.domElement)
@@ -164,7 +172,7 @@ export function criarQubit(
   halo.renderOrder = -2
   bloch.add(halo)
 
-  const fino = new THREE.LineBasicMaterial({ color: cor, transparent: true, opacity: 0.2 })
+  const fino = new THREE.LineBasicMaterial({ color: cor, transparent: true, opacity: vivido ? 0.26 : 0.2 })
   const forte = new THREE.LineBasicMaterial({ color: cor, transparent: true, opacity: 0.72 })
   for (let k = -2; k <= 2; k++) {
     if (k === 0) continue
@@ -183,11 +191,27 @@ export function criarQubit(
   }
   bloch.add(new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(circulo(1.003, 'y')), forte))
 
-  const eixoGeo = (de: THREE.Vector3, ate: THREE.Vector3) => new THREE.BufferGeometry().setFromPoints([de, ate])
-  const eixoMat = new THREE.LineBasicMaterial({ color: cor, transparent: true, opacity: 0.5 })
-  bloch.add(new THREE.Line(eixoGeo(new THREE.Vector3(0, -1.32, 0), new THREE.Vector3(0, 1.32, 0)), eixoMat))
-  bloch.add(new THREE.Line(eixoGeo(new THREE.Vector3(-1.2, 0, 0), new THREE.Vector3(1.2, 0, 0)), eixoMat))
-  bloch.add(new THREE.Line(eixoGeo(new THREE.Vector3(0, 0, -1.2), new THREE.Vector3(0, 0, 1.2)), eixoMat))
+  // Eixos na cena: x = By, y = Bz, z = Bx. No modo vívido cada eixo ganha cor própria e vira um cilindro fino.
+  type ChaveEixo = '--sim-x' | '--sim-y' | '--sim-z'
+  const padraoEixo: Record<ChaveEixo, string> = { '--sim-x': '#ff6b6b', '--sim-y': '#ffcf5a', '--sim-z': '#5cb8ff' }
+  const eixos: { chave: ChaveEixo; material: THREE.LineBasicMaterial | THREE.MeshBasicMaterial }[] = []
+  for (const [chave, ate] of [
+    ['--sim-z', new THREE.Vector3(0, 1.32, 0)],
+    ['--sim-y', new THREE.Vector3(1.2, 0, 0)],
+    ['--sim-x', new THREE.Vector3(0, 0, 1.2)],
+  ] as const) {
+    if (vivido) {
+      const material = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0.95, depthWrite: false })
+      const barra = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, ate.length() * 2, 10), material)
+      barra.quaternion.setFromUnitVectors(EIXO_Z, ate.clone().normalize())
+      bloch.add(barra)
+      eixos.push({ chave, material })
+    } else {
+      const material = new THREE.LineBasicMaterial({ color: cor, transparent: true, opacity: 0.5 })
+      bloch.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([ate.clone().negate(), ate]), material))
+      eixos.push({ chave, material })
+    }
+  }
 
   // Eixo de rotação destacado durante cada porta.
   const eixoPortaGeo = new THREE.BufferGeometry().setFromPoints([
@@ -214,10 +238,29 @@ export function criarQubit(
   bloch.add(ponta)
 
   const aura = new THREE.Mesh(
-    new THREE.SphereGeometry(0.085, 16, 12),
-    new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: 0.25, depthWrite: false }),
+    new THREE.SphereGeometry(vivido ? 0.1 : 0.085, 16, 12),
+    new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: vivido ? 0.32 : 0.25, depthWrite: false }),
   )
   bloch.add(aura)
+
+  // Seta sólida (haste + cone) para o vetor de estado no modo vívido.
+  const ALTURA_CONE = 0.13
+  const setaMat = new THREE.MeshBasicMaterial({ color: cor })
+  const seta = new THREE.Group()
+  seta.add(
+    new THREE.Mesh(
+      new THREE.CylinderGeometry(0.017, 0.017, RAIO - ALTURA_CONE, 14).translate(0, (RAIO - ALTURA_CONE) / 2, 0),
+      setaMat,
+    ),
+    new THREE.Mesh(new THREE.ConeGeometry(0.052, ALTURA_CONE, 20).translate(0, RAIO - ALTURA_CONE / 2, 0), setaMat),
+  )
+  seta.visible = vivido
+  bloch.add(seta)
+  if (vivido) {
+    vetor.visible = false
+    ponta.visible = false
+  }
+  const direcaoSeta = new THREE.Vector3()
 
   const rastroPos = new Float32Array(RASTRO * 3)
   const rastroCor = new Float32Array(RASTRO * 3)
@@ -226,28 +269,46 @@ export function criarQubit(
   rastroGeo.setAttribute('color', new THREE.BufferAttribute(rastroCor, 3))
   bloch.add(new THREE.Line(rastroGeo, new THREE.LineBasicMaterial({ vertexColors: true })))
 
-  const aplicarCores = () => {
-    const estilos = getComputedStyle(host)
-    cor.set(estilos.getPropertyValue('--arte-cor').trim() || '#1a5140')
-    for (const material of [fino, forte, eixoMat, eixoPortaMat, vetor.material, ponta.material, aura.material]) {
-      material.color.copy(cor)
-    }
-    const corCssRastro = estilos.getPropertyValue('--arte-rastro').trim()
-    const corRastro = corCssRastro
-      ? new THREE.Color(corCssRastro)
-      : new THREE.Color().setRGB(0.56, 0.82, 0.65)
+  const preencherRastro = (inicio: THREE.Color, fim: THREE.Color) => {
     for (let i = 0; i < RASTRO; i++) {
       const brilho = Math.pow(i / (RASTRO - 1), 1.6)
       rastroCor.set(
         [
-          corRastro.r + (cor.r - corRastro.r) * brilho,
-          corRastro.g + (cor.g - corRastro.g) * brilho,
-          corRastro.b + (cor.b - corRastro.b) * brilho,
+          inicio.r + (fim.r - inicio.r) * brilho,
+          inicio.g + (fim.g - inicio.g) * brilho,
+          inicio.b + (fim.b - inicio.b) * brilho,
         ],
         i * 3,
       )
     }
     rastroGeo.attributes.color.needsUpdate = true
+  }
+
+  const aplicarCores = () => {
+    const estilos = getComputedStyle(host)
+    const ler = (nome: string, padrao: string) => estilos.getPropertyValue(nome).trim() || padrao
+
+    if (vivido) {
+      // A esfera (corpo e halo) usa `cor`; grade, eixos e vetor têm cores próprias.
+      cor.set(ler('--sim-esfera', '#5ca87c'))
+      const corGrade = new THREE.Color(ler('--sim-grade', '#b7e5ba'))
+      const corVetor = new THREE.Color(ler('--sim-vetor', '#6dffbf'))
+      fino.color.copy(corGrade)
+      forte.color.copy(corGrade)
+      eixoPortaMat.color.set(ler('--sim-eixo-porta', '#ffffff'))
+      for (const eixo of eixos) eixo.material.color.set(ler(eixo.chave, padraoEixo[eixo.chave]))
+      for (const material of [setaMat, vetor.material, ponta.material, aura.material]) material.color.copy(corVetor)
+      preencherRastro(new THREE.Color(ler('--sim-fundo', '#0b1f19')), new THREE.Color(ler('--sim-rastro', '#3fbf8a')))
+      return
+    }
+
+    cor.set(ler('--arte-cor', '#1a5140'))
+    for (const material of [fino, forte, eixoPortaMat, vetor.material, ponta.material, aura.material]) {
+      material.color.copy(cor)
+    }
+    for (const eixo of eixos) eixo.material.color.copy(cor)
+    const corCssRastro = ler('--arte-rastro', '')
+    preencherRastro(corCssRastro ? new THREE.Color(corCssRastro) : new THREE.Color().setRGB(0.56, 0.82, 0.65), cor)
   }
 
   const estadoInicial = opcoes?.estadoInicial ?? '|+>'
@@ -265,17 +326,17 @@ export function criarQubit(
   )
 
   const rotulos = [
-    { simbolo: '0', posicao: new THREE.Vector3(0, 1.38, 0), el: document.createElement('span'), destaque: false },
-    { simbolo: '1', posicao: new THREE.Vector3(0, -1.38, 0), el: document.createElement('span'), destaque: false },
-    { simbolo: '+', posicao: new THREE.Vector3(0, 0, 1.38), el: document.createElement('span'), destaque: false },
-    { simbolo: '−', posicao: new THREE.Vector3(0, 0, -1.38), el: document.createElement('span'), destaque: false },
-    { simbolo: '+i', posicao: new THREE.Vector3(1.38, 0, 0), el: document.createElement('span'), destaque: false },
-    { simbolo: '−i', posicao: new THREE.Vector3(-1.38, 0, 0), el: document.createElement('span'), destaque: false },
-    { simbolo: 'ψ', posicao: new THREE.Vector3(), el: document.createElement('span'), destaque: true },
+    { simbolo: '0', eixo: 'z', posicao: new THREE.Vector3(0, 1.38, 0), el: document.createElement('span'), destaque: false },
+    { simbolo: '1', eixo: 'z', posicao: new THREE.Vector3(0, -1.38, 0), el: document.createElement('span'), destaque: false },
+    { simbolo: '+', eixo: 'x', posicao: new THREE.Vector3(0, 0, 1.38), el: document.createElement('span'), destaque: false },
+    { simbolo: '−', eixo: 'x', posicao: new THREE.Vector3(0, 0, -1.38), el: document.createElement('span'), destaque: false },
+    { simbolo: '+i', eixo: 'y', posicao: new THREE.Vector3(1.38, 0, 0), el: document.createElement('span'), destaque: false },
+    { simbolo: '−i', eixo: 'y', posicao: new THREE.Vector3(-1.38, 0, 0), el: document.createElement('span'), destaque: false },
+    { simbolo: 'ψ', eixo: null, posicao: new THREE.Vector3(), el: document.createElement('span'), destaque: true },
   ]
   for (const r of rotulos) {
     r.el.textContent = `|${r.simbolo}`
-    r.el.className = r.destaque ? 'ket destaque' : 'ket'
+    r.el.className = r.destaque ? 'ket destaque' : `ket eixo-${r.eixo}`
     labelHost.appendChild(r.el)
   }
   const rotuloEstado = rotulos[6]
@@ -364,6 +425,7 @@ export function criarQubit(
     vetorGeo.attributes.position.needsUpdate = true
     ponta.position.copy(estadoAtual)
     aura.position.copy(estadoAtual)
+    if (vivido) seta.quaternion.setFromUnitVectors(EIXO_Z, direcaoSeta.copy(estadoAtual).normalize())
     rotuloEstado.posicao.copy(estadoAtual).multiplyScalar(1.12).add(new THREE.Vector3(0.06, 0.08, 0))
 
     bloch.updateMatrixWorld(true)
