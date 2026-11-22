@@ -1,24 +1,116 @@
 import * as THREE from 'three'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
-const RASTRO = 140
+const RASTRO = 180
+const RAIO = 1.004
+const VELOCIDADE_PORTA = 3.1 // rad/s no espaço de Bloch
+const VELOCIDADE_PRECESSAO = 0.9 // rad/s em torno de Bz
+const INTERVALO_LEITURA = 80 // ms
 
 const VERTEX = `varying vec3 n; void main(){ n=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`
+
+export type Complexo = { re: number; im: number }
+export type PortaQuantica = 'H' | 'X' | 'Y' | 'Z' | 'S' | 'T'
+export type EstadoPreparado = '|0>' | '|+>'
+
+export type LeituraQubit = {
+  alpha: Complexo
+  beta: Complexo
+  p0: number
+  p1: number
+  theta: number
+  phi: number
+  ultimoResultado: '0' | '1' | null
+}
+
+/**
+ * Convenção de Bloch destra:
+ * Bx = (0, 0, 1), By = (1, 0, 0), Bz = (0, 1, 0).
+ * Assim Bx × By = Bz e o vetor vai para a cena como (By, Bz, Bx).
+ */
+const PORTAS: Record<PortaQuantica, { eixo: THREE.Vector3; angulo: number }> = {
+  X: { eixo: new THREE.Vector3(0, 0, 1), angulo: Math.PI },
+  Y: { eixo: new THREE.Vector3(1, 0, 0), angulo: Math.PI },
+  Z: { eixo: new THREE.Vector3(0, 1, 0), angulo: Math.PI },
+  S: { eixo: new THREE.Vector3(0, 1, 0), angulo: Math.PI / 2 },
+  T: { eixo: new THREE.Vector3(0, 1, 0), angulo: Math.PI / 4 },
+  H: { eixo: new THREE.Vector3(0, 1, 1).normalize(), angulo: Math.PI },
+}
+
+const EIXO_Z = new THREE.Vector3(0, 1, 0)
+const INV_SQRT2 = Math.SQRT1_2
+
+const cplx = (re: number, im = 0): Complexo => ({ re, im })
+const somar = (a: Complexo, b: Complexo): Complexo => ({ re: a.re + b.re, im: a.im + b.im })
+const subtrair = (a: Complexo, b: Complexo): Complexo => ({ re: a.re - b.re, im: a.im - b.im })
+const escalar = (a: Complexo, k: number): Complexo => ({ re: a.re * k, im: a.im * k })
+const multiplicar = (a: Complexo, b: Complexo): Complexo => ({
+  re: a.re * b.re - a.im * b.im,
+  im: a.re * b.im + a.im * b.re,
+})
+const girar = (a: Complexo, angulo: number): Complexo => {
+  const c = Math.cos(angulo)
+  const s = Math.sin(angulo)
+  return { re: a.re * c - a.im * s, im: a.re * s + a.im * c }
+}
+const aquad = (a: Complexo) => a.re * a.re + a.im * a.im
+
+/** Aplica a matriz unitária exata da porta ao spinor (α, β). */
+const aplicarMatriz = (porta: PortaQuantica, alpha: Complexo, beta: Complexo): [Complexo, Complexo] => {
+  switch (porta) {
+    case 'X':
+      return [beta, alpha]
+    case 'Y':
+      return [multiplicar(cplx(0, -1), beta), multiplicar(cplx(0, 1), alpha)]
+    case 'Z':
+      return [alpha, escalar(beta, -1)]
+    case 'S':
+      return [alpha, multiplicar(cplx(0, 1), beta)]
+    case 'T':
+      return [alpha, multiplicar(cplx(INV_SQRT2, INV_SQRT2), beta)]
+    case 'H':
+      return [escalar(somar(alpha, beta), INV_SQRT2), escalar(subtrair(alpha, beta), INV_SQRT2)]
+  }
+}
+
+/** (By, Bz, Bx) a partir de α, β. */
+const vetorDeBloch = (alpha: Complexo, beta: Complexo) =>
+  new THREE.Vector3(
+    2 * (alpha.re * beta.im - alpha.im * beta.re),
+    aquad(alpha) - aquad(beta),
+    2 * (alpha.re * beta.re + alpha.im * beta.im),
+  )
+
+const normalizarSpinor = (alpha: Complexo, beta: Complexo): [Complexo, Complexo] => {
+  const n = Math.hypot(alpha.re, alpha.im, beta.re, beta.im)
+  return n < 1e-12 ? [cplx(1), cplx(0)] : [escalar(alpha, 1 / n), escalar(beta, 1 / n)]
+}
+
+/** Remove a fase global para exibir um representante canônico (α real ≥ 0). */
+const canonizarSpinor = (alpha: Complexo, beta: Complexo): [Complexo, Complexo] => {
+  const magAlpha = Math.hypot(alpha.re, alpha.im)
+  const fase = magAlpha > 1e-9 ? -Math.atan2(alpha.im, alpha.re) : -Math.atan2(beta.im, beta.re)
+  return [girar(alpha, fase), girar(beta, fase)]
+}
 
 const circulo = (raio: number, eixo: 'x' | 'y' | 'z', passos = 128) =>
   Array.from({ length: passos }, (_, i) => {
     const a = (i / passos) * Math.PI * 2
     const c = Math.cos(a) * raio
     const s = Math.sin(a) * raio
-    return eixo === 'y' ? new THREE.Vector3(c, 0, s) : eixo === 'x' ? new THREE.Vector3(0, c, s) : new THREE.Vector3(c, s, 0)
+    return eixo === 'y'
+      ? new THREE.Vector3(c, 0, s)
+      : eixo === 'x'
+        ? new THREE.Vector3(0, c, s)
+        : new THREE.Vector3(c, s, 0)
   })
-
-const estado = (theta: number, phi: number, raio = 1) =>
-  new THREE.Vector3(Math.sin(theta) * Math.cos(phi), Math.cos(theta), Math.sin(theta) * Math.sin(phi)).multiplyScalar(raio)
 
 export function criarQubit(
   host: HTMLElement,
   labelHost: HTMLElement,
   onFailure: () => void,
+  onStateChange?: (leitura: LeituraQubit) => void,
+  opcoes?: { estadoInicial?: EstadoPreparado; precessaoInicial?: boolean },
 ) {
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
@@ -28,10 +120,18 @@ export function criarQubit(
 
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 20)
-  camera.position.set(0, 0, 4.4)
+  camera.position.set(2.35, 1.45, 3.15)
+  camera.lookAt(0, 0, 0)
+
+  const controls = new OrbitControls(camera, renderer.domElement)
+  controls.enableDamping = true
+  controls.dampingFactor = 0.07
+  controls.enableZoom = false
+  controls.enablePan = false
+  controls.rotateSpeed = 0.75
+
+  // O referencial fica fixo: só a câmera orbita.
   const bloch = new THREE.Group()
-  const GIRO_INICIAL = 0.5
-  bloch.rotation.set(0.38, GIRO_INICIAL, 0)
   scene.add(bloch)
 
   const cor = new THREE.Color()
@@ -48,6 +148,7 @@ export function criarQubit(
   )
   corpo.renderOrder = -1
   bloch.add(corpo)
+
   const halo = new THREE.Mesh(
     new THREE.SphereGeometry(1.1, 64, 48),
     new THREE.ShaderMaterial({
@@ -68,7 +169,10 @@ export function criarQubit(
   for (let k = -2; k <= 2; k++) {
     if (k === 0) continue
     const altura = Math.sin((k * Math.PI) / 6)
-    const anel = new THREE.LineLoop(new THREE.BufferGeometry().setFromPoints(circulo(Math.cos((k * Math.PI) / 6) * 1.002, 'y')), fino)
+    const anel = new THREE.LineLoop(
+      new THREE.BufferGeometry().setFromPoints(circulo(Math.cos((k * Math.PI) / 6) * 1.002, 'y')),
+      fino,
+    )
     anel.position.y = altura
     bloch.add(anel)
   }
@@ -85,14 +189,33 @@ export function criarQubit(
   bloch.add(new THREE.Line(eixoGeo(new THREE.Vector3(-1.2, 0, 0), new THREE.Vector3(1.2, 0, 0)), eixoMat))
   bloch.add(new THREE.Line(eixoGeo(new THREE.Vector3(0, 0, -1.2), new THREE.Vector3(0, 0, 1.2)), eixoMat))
 
+  // Eixo de rotação destacado durante cada porta.
+  const eixoPortaGeo = new THREE.BufferGeometry().setFromPoints([
+    new THREE.Vector3(0, -1.35, 0),
+    new THREE.Vector3(0, 1.35, 0),
+  ])
+  const eixoPortaMat = new THREE.LineDashedMaterial({
+    color: cor,
+    transparent: true,
+    opacity: 0.85,
+    dashSize: 0.07,
+    gapSize: 0.05,
+  })
+  const eixoPorta = new THREE.Line(eixoPortaGeo, eixoPortaMat)
+  eixoPorta.computeLineDistances()
+  eixoPorta.visible = false
+  bloch.add(eixoPorta)
+
   const vetorGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(0, 1, 0)])
   const vetor = new THREE.Line(vetorGeo, new THREE.LineBasicMaterial({ color: cor }))
   bloch.add(vetor)
-  const ponta = new THREE.Mesh(new THREE.SphereGeometry(0.035, 16, 12), new THREE.MeshBasicMaterial({ color: cor }))
+
+  const ponta = new THREE.Mesh(new THREE.SphereGeometry(0.04, 16, 12), new THREE.MeshBasicMaterial({ color: cor }))
   bloch.add(ponta)
+
   const aura = new THREE.Mesh(
-    new THREE.SphereGeometry(0.075, 16, 12),
-    new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: 0.22, depthWrite: false }),
+    new THREE.SphereGeometry(0.085, 16, 12),
+    new THREE.MeshBasicMaterial({ color: cor, transparent: true, opacity: 0.25, depthWrite: false }),
   )
   bloch.add(aura)
 
@@ -106,7 +229,7 @@ export function criarQubit(
   const aplicarCores = () => {
     const estilos = getComputedStyle(host)
     cor.set(estilos.getPropertyValue('--arte-cor').trim() || '#1a5140')
-    for (const material of [fino, forte, eixoMat, vetor.material, ponta.material, aura.material]) {
+    for (const material of [fino, forte, eixoMat, eixoPortaMat, vetor.material, ponta.material, aura.material]) {
       material.color.copy(cor)
     }
     const corCssRastro = estilos.getPropertyValue('--arte-rastro').trim()
@@ -115,82 +238,246 @@ export function criarQubit(
       : new THREE.Color().setRGB(0.56, 0.82, 0.65)
     for (let i = 0; i < RASTRO; i++) {
       const brilho = Math.pow(i / (RASTRO - 1), 1.6)
-      rastroCor.set([
-        corRastro.r + (cor.r - corRastro.r) * brilho,
-        corRastro.g + (cor.g - corRastro.g) * brilho,
-        corRastro.b + (cor.b - corRastro.b) * brilho,
-      ], i * 3)
+      rastroCor.set(
+        [
+          corRastro.r + (cor.r - corRastro.r) * brilho,
+          corRastro.g + (cor.g - corRastro.g) * brilho,
+          corRastro.b + (cor.b - corRastro.b) * brilho,
+        ],
+        i * 3,
+      )
     }
     rastroGeo.attributes.color.needsUpdate = true
   }
 
-  const posicaoEstado = (t: number) => estado(1.15 + 0.55 * Math.sin(t * 0.21), t * 0.55, 1.004)
-  const preencherRastro = (t: number) => {
-    for (let i = 0; i < RASTRO; i++) {
-      posicaoEstado(t - (RASTRO - 1 - i) * 0.05).toArray(rastroPos, i * 3)
-    }
-    rastroGeo.attributes.position.needsUpdate = true
-  }
+  const estadoInicial = opcoes?.estadoInicial ?? '|+>'
+  let alpha = estadoInicial === '|0>' ? cplx(1) : cplx(INV_SQRT2)
+  let beta = estadoInicial === '|0>' ? cplx(0) : cplx(INV_SQRT2)
+  let ultimoResultado: '0' | '1' | null = null
+
+  const estadoAtual = vetorDeBloch(alpha, beta).setLength(RAIO)
+
+  const precessaoInicial = opcoes?.precessaoInicial ?? true
+  const historico = Array.from({ length: RASTRO }, (_, i) =>
+    precessaoInicial
+      ? estadoAtual.clone().applyAxisAngle(EIXO_Z, -VELOCIDADE_PRECESSAO * (RASTRO - 1 - i) / 60).setLength(RAIO)
+      : estadoAtual.clone(),
+  )
 
   const rotulos = [
-    { texto: '|0>', posicao: new THREE.Vector3(0, 1.34, 0), el: document.createElement('span'), classe: '' },
-    { texto: '|1>', posicao: new THREE.Vector3(0, -1.34, 0), el: document.createElement('span'), classe: '' },
-    { texto: '|ψ>', posicao: new THREE.Vector3(), el: document.createElement('span'), classe: 'destaque' },
+    { simbolo: '0', posicao: new THREE.Vector3(0, 1.38, 0), el: document.createElement('span'), destaque: false },
+    { simbolo: '1', posicao: new THREE.Vector3(0, -1.38, 0), el: document.createElement('span'), destaque: false },
+    { simbolo: '+', posicao: new THREE.Vector3(0, 0, 1.38), el: document.createElement('span'), destaque: false },
+    { simbolo: '−', posicao: new THREE.Vector3(0, 0, -1.38), el: document.createElement('span'), destaque: false },
+    { simbolo: '+i', posicao: new THREE.Vector3(1.38, 0, 0), el: document.createElement('span'), destaque: false },
+    { simbolo: '−i', posicao: new THREE.Vector3(-1.38, 0, 0), el: document.createElement('span'), destaque: false },
+    { simbolo: 'ψ', posicao: new THREE.Vector3(), el: document.createElement('span'), destaque: true },
   ]
   for (const r of rotulos) {
-    r.el.textContent = r.texto
-    if (r.classe) r.el.className = r.classe
+    r.el.textContent = `|${r.simbolo}`
+    r.el.className = r.destaque ? 'ket destaque' : 'ket'
     labelHost.appendChild(r.el)
   }
-  const rotuloEstado = rotulos[2]
+  const rotuloEstado = rotulos[6]
 
   let largura = 1
   let altura = 1
   let frame = 0
   let ultimo = 0
-  let decorrido = 4
-  let pausado = false
+  let precessando = precessaoInicial
+  let arrastando = false
   let visivel = true
   let descartado = false
+  let ultimaNotificacao = 0
+
+  const fila: PortaQuantica[] = []
+  let transicao: {
+    porta: PortaQuantica
+    origem: THREE.Vector3
+    eixo: THREE.Vector3
+    angulo: number
+    progresso: number
+    duracao: number
+  } | null = null
+
   const projetado = new THREE.Vector3()
   const mundo = new THREE.Vector3()
+  const direcao = new THREE.Vector3()
+  const paraCamera = new THREE.Vector3()
+  const pontaEixo = new THREE.Vector3()
+
+  const atualizarBufferRastro = () => {
+    for (let i = 0; i < RASTRO; i++) {
+      historico[i].toArray(rastroPos, i * 3)
+    }
+    rastroGeo.attributes.position.needsUpdate = true
+  }
+  atualizarBufferRastro()
+
+  const empurrarRastro = (ponto: THREE.Vector3) => {
+    historico.shift()
+    historico.push(ponto.clone())
+  }
+
+  const limparRastro = (ponto: THREE.Vector3) => {
+    for (let i = 0; i < RASTRO; i++) {
+      historico[i].copy(ponto).setLength(RAIO)
+    }
+    atualizarBufferRastro()
+  }
+
+  const adicionarArco = (origem: THREE.Vector3, eixo: THREE.Vector3, de: number, ate: number) => {
+    const passos = Math.max(1, Math.min(10, Math.ceil(Math.abs(ate - de) / 0.035)))
+    for (let i = 1; i <= passos; i++) {
+      const angulo = de + ((ate - de) * i) / passos
+      empurrarRastro(origem.clone().applyAxisAngle(eixo, angulo).setLength(RAIO))
+    }
+  }
+
+  const atualizarEstado = () => {
+    estadoAtual.copy(vetorDeBloch(alpha, beta)).setLength(RAIO)
+  }
+
+  const montarLeitura = (): LeituraQubit => {
+    const theta = Math.acos(THREE.MathUtils.clamp(estadoAtual.y, -1, 1))
+    const phiBruto = Math.atan2(estadoAtual.x, estadoAtual.z)
+    const phi = phiBruto < 0 ? phiBruto + Math.PI * 2 : phiBruto
+    const p0 = THREE.MathUtils.clamp((1 + estadoAtual.y) / 2, 0, 1)
+    const seno = Math.sin(theta / 2)
+    const [a, b] = canonizarSpinor(
+      cplx(Math.cos(theta / 2)),
+      cplx(seno * Math.cos(phi), seno * Math.sin(phi)),
+    )
+    return { alpha: a, beta: b, p0, p1: 1 - p0, theta, phi, ultimoResultado }
+  }
+
+  const notificar = (forcar = false) => {
+    if (descartado || !onStateChange) return
+    const agora = performance.now()
+    if (!forcar && agora - ultimaNotificacao < INTERVALO_LEITURA) return
+    ultimaNotificacao = agora
+    onStateChange(montarLeitura())
+  }
 
   const desenhar = () => {
-    bloch.rotation.y = GIRO_INICIAL + decorrido * 0.04
-    const atual = posicaoEstado(decorrido)
-    vetorGeo.attributes.position.setXYZ(1, atual.x, atual.y, atual.z)
+    vetorGeo.attributes.position.setXYZ(1, estadoAtual.x, estadoAtual.y, estadoAtual.z)
     vetorGeo.attributes.position.needsUpdate = true
-    ponta.position.copy(atual)
-    aura.position.copy(atual)
-    preencherRastro(decorrido)
-    rotuloEstado.posicao.copy(atual).multiplyScalar(1.1).add(new THREE.Vector3(0.07, 0.1, 0))
+    ponta.position.copy(estadoAtual)
+    aura.position.copy(estadoAtual)
+    rotuloEstado.posicao.copy(estadoAtual).multiplyScalar(1.12).add(new THREE.Vector3(0.06, 0.08, 0))
+
     bloch.updateMatrixWorld(true)
+    paraCamera.copy(camera.position).normalize()
     for (const r of rotulos) {
       mundo.copy(r.posicao).applyMatrix4(bloch.matrixWorld)
       projetado.copy(mundo).project(camera)
       r.el.style.transform = `translate(${((projetado.x + 1) * largura) / 2}px,${((-projetado.y + 1) * altura) / 2}px) translate(-50%, -50%)`
+      direcao.copy(mundo).normalize()
+      r.el.style.opacity = r.destaque || direcao.dot(paraCamera) >= -0.15 ? '1' : '0.42'
     }
+    atualizarBufferRastro()
     renderer.render(scene, camera)
   }
 
-  const podeAnimar = () => !descartado && !pausado && visivel && !document.hidden
+  const mostrarEixo = (eixo: THREE.Vector3) => {
+    const p = pontaEixo.copy(eixo).normalize().multiplyScalar(1.35)
+    const posicoes = eixoPortaGeo.attributes.position as THREE.BufferAttribute
+    posicoes.setXYZ(0, -p.x, -p.y, -p.z)
+    posicoes.setXYZ(1, p.x, p.y, p.z)
+    posicoes.needsUpdate = true
+    eixoPorta.computeLineDistances()
+    eixoPorta.visible = true
+  }
+
+  const esconderEixo = () => {
+    eixoPorta.visible = false
+  }
+
+  const iniciarProxima = () => {
+    const porta = fila.shift()
+    if (!porta) {
+      esconderEixo()
+      return false
+    }
+    const def = PORTAS[porta]
+    transicao = {
+      porta,
+      origem: estadoAtual.clone(),
+      eixo: def.eixo.clone(),
+      angulo: def.angulo,
+      progresso: 0,
+      duracao: Math.max(0.26, def.angulo / VELOCIDADE_PORTA),
+    }
+    mostrarEixo(def.eixo)
+    ultimoResultado = null
+    return true
+  }
+
+  const concluirPorta = () => {
+    if (!transicao) return
+    const [a, b] = normalizarSpinor(...aplicarMatriz(transicao.porta, alpha, beta))
+    alpha = a
+    beta = b
+    transicao = null
+    esconderEixo()
+    atualizarEstado()
+    empurrarRastro(estadoAtual)
+    notificar(true)
+    iniciarProxima()
+  }
+
+  const podeRodar = () => !descartado && visivel && !document.hidden
+
   const tick = (tempo: number) => {
     frame = 0
-    if (!podeAnimar()) return
-    if (tempo - ultimo >= 32) {
-      decorrido += Math.min((tempo - ultimo) / 1000, 0.05)
-      ultimo = tempo
-      desenhar()
+    if (!podeRodar()) return
+
+    const dt = Math.min((tempo - ultimo) / 1000, 0.05)
+    ultimo = tempo
+
+    if (transicao) {
+      const anterior = transicao.progresso
+      transicao.progresso = Math.min(1, transicao.progresso + dt / transicao.duracao)
+      const de = transicao.angulo * anterior
+      const ate = transicao.angulo * transicao.progresso
+      adicionarArco(transicao.origem, transicao.eixo, de, ate)
+      estadoAtual.copy(transicao.origem).applyAxisAngle(transicao.eixo, ate).setLength(RAIO)
+      if (transicao.progresso >= 1) concluirPorta()
+      notificar()
+    } else if (precessando) {
+      // Evolução livre sob H = ħωZ/2: apenas a fase de β avança (precessão de Larmor).
+      beta = girar(beta, VELOCIDADE_PRECESSAO * dt)
+      atualizarEstado()
+      empurrarRastro(estadoAtual)
+      notificar()
     }
-    frame = requestAnimationFrame(tick)
+
+    const cameraMudou = controls.update()
+    desenhar()
+
+    if (transicao || precessando || arrastando || cameraMudou) {
+      frame = requestAnimationFrame(tick)
+    }
   }
+
   const sincronizar = () => {
     if (frame) cancelAnimationFrame(frame)
     frame = 0
     ultimo = performance.now()
-    if (podeAnimar()) frame = requestAnimationFrame(tick)
+    if (podeRodar()) frame = requestAnimationFrame(tick)
     else if (!descartado) desenhar()
   }
+
+  const onStart = () => {
+    arrastando = true
+    sincronizar()
+  }
+  const onEnd = () => {
+    arrastando = false
+    sincronizar()
+  }
+  controls.addEventListener('start', onStart)
+  controls.addEventListener('end', onEnd)
 
   const resize = new ResizeObserver(([entry]) => {
     largura = Math.max(1, entry.contentRect.width)
@@ -201,32 +488,88 @@ export function criarQubit(
     desenhar()
   })
   resize.observe(host)
+
   const intersecao = new IntersectionObserver(([entry]) => {
     visivel = entry.isIntersecting
     sincronizar()
   })
   intersecao.observe(host)
   document.addEventListener('visibilitychange', sincronizar)
+
   const contextoPerdido = (event: Event) => {
     event.preventDefault()
     onFailure()
   }
   renderer.domElement.addEventListener('webglcontextlost', contextoPerdido)
+
   aplicarCores()
   sincronizar()
+  notificar(true)
 
   return {
     atualizarCores() {
       aplicarCores()
       desenhar()
     },
-    setPausado(valor: boolean) {
-      pausado = valor
+    aplicarPorta(porta: PortaQuantica) {
+      fila.push(porta)
+      ultimoResultado = null
+      if (!transicao) iniciarProxima()
+      sincronizar()
+      notificar(true)
+    },
+    preparar(estado: EstadoPreparado) {
+      fila.length = 0
+      transicao = null
+      esconderEixo()
+      if (estado === '|0>') {
+        alpha = cplx(1)
+        beta = cplx(0)
+      } else {
+        alpha = cplx(INV_SQRT2)
+        beta = cplx(INV_SQRT2)
+      }
+      ultimoResultado = null
+      atualizarEstado()
+      limparRastro(estadoAtual)
+      notificar(true)
+      sincronizar()
+    },
+    medir() {
+      // Se uma porta está em curso, conclui o estado unitário dela antes de medir.
+      if (transicao) {
+        const [a, b] = normalizarSpinor(...aplicarMatriz(transicao.porta, alpha, beta))
+        alpha = a
+        beta = b
+        transicao = null
+        esconderEixo()
+      }
+      fila.length = 0
+      atualizarEstado()
+      const p0 = THREE.MathUtils.clamp((1 + estadoAtual.y) / 2, 0, 1)
+      const resultado: '0' | '1' = Math.random() < p0 ? '0' : '1'
+      alpha = resultado === '0' ? cplx(1) : cplx(0)
+      beta = resultado === '0' ? cplx(0) : cplx(1)
+      ultimoResultado = resultado
+      atualizarEstado()
+      limparRastro(estadoAtual)
+      notificar(true)
+      sincronizar()
+      return resultado
+    },
+    setPrecessao(valor: boolean) {
+      precessando = valor
+      notificar(true)
       sincronizar()
     },
     dispose() {
       descartado = true
+      fila.length = 0
+      transicao = null
       cancelAnimationFrame(frame)
+      controls.removeEventListener('start', onStart)
+      controls.removeEventListener('end', onEnd)
+      controls.dispose()
       resize.disconnect()
       intersecao.disconnect()
       document.removeEventListener('visibilitychange', sincronizar)
@@ -247,3 +590,4 @@ export function criarQubit(
     },
   }
 }
+
