@@ -1,14 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
 
-export type Arte = 'qubit' | 'atomo'
+export type Arte = 'qubit'
 
 type Cena = {
   atualizarCores: () => void
-  setPausado: (v: boolean) => void
+  setPrecessao: (v: boolean) => void
   dispose: () => void
 }
-
-const nomes: Record<Arte, string> = { qubit: 'qubit', atomo: 'átomo' }
 
 const Pausa = ({ pausado }: { pausado: boolean }) => (
   <svg className="icon" viewBox="0 0 20 20" aria-hidden="true" focusable="false">
@@ -21,7 +19,7 @@ export function ArteHero({ arte, paleta }: { arte: Arte; paleta: string }) {
   const rotulos = useRef<HTMLDivElement>(null)
   const cena = useRef<Cena | null>(null)
   const [pronto, setPronto] = useState(false)
-  const [pausado, setPausado] = useState(false)
+  const [precessando, setPrecessando] = useState(true)
 
   useEffect(() => {
     let cancelado = false
@@ -31,21 +29,22 @@ export function ArteHero({ arte, paleta }: { arte: Arte; paleta: string }) {
       cena.current = null
       setPronto(false)
     }
-    const montar: Promise<(h: HTMLElement, r: HTMLElement) => Cena> =
-      arte === 'atomo'
-        ? import('../lib/atomo-scene').then(({ criarAtomo }) => (h) => criarAtomo(h, falhar))
-        : import('../lib/qubit-scene').then(({ criarQubit }) => (h, r) => criarQubit(h, r, falhar))
-    montar
-      .then((criar) => {
+
+    import('../lib/qubit-scene')
+      .then(({ criarQubit }) => {
         if (cancelado || !host.current || !rotulos.current) return
         try {
-          cena.current = criar(host.current, rotulos.current)
+          cena.current = criarQubit(host.current, rotulos.current, falhar, undefined, {
+            estadoInicial: '|+>',
+            precessaoInicial: true,
+          })
           setPronto(true)
         } catch {
           falhar()
         }
       })
       .catch(falhar)
+
     return () => {
       cancelado = true
       cena.current?.dispose()
@@ -58,28 +57,37 @@ export function ArteHero({ arte, paleta }: { arte: Arte; paleta: string }) {
   }, [paleta])
 
   const alternar = () => {
-    cena.current?.setPausado(!pausado)
-    setPausado(!pausado)
+    const proximo = !precessando
+    cena.current?.setPrecessao(proximo)
+    setPrecessando(proximo)
   }
 
   return (
-    <>
-      <div className={`qubit-art arte-${arte}${pronto ? ' pronto' : ''}`} aria-hidden="true">
-        <div className="qubit-glow" />
+    <div className="hero-bloch">
+      <div
+        className={`qubit-art arte-${arte}${pronto ? ' pronto' : ''}`}
+        role="img"
+        aria-label="Esfera de Bloch interativa: arraste para girar em 3D"
+      >
+        <div className="qubit-glow" aria-hidden="true" />
         <div className="qubit-renderer" ref={host} />
-        <div className="qubit-labels" ref={rotulos} />
+        <div className="qubit-labels" ref={rotulos} aria-hidden="true" />
       </div>
+
       {pronto && (
-        <button
-          type="button"
-          className="qubit-toggle"
-          onClick={alternar}
-          aria-label={`${pausado ? 'Retomar' : 'Pausar'} animação do ${nomes[arte]}`}
-        >
-          <Pausa pausado={pausado} />
-          {pausado ? 'Retomar' : 'Pausar'}
-        </button>
+        <div className="qubit-hero-rodape">
+          <span className="qubit-dica">Arraste para girar</span>
+          <button
+            type="button"
+            className="qubit-toggle"
+            onClick={alternar}
+            aria-label={`${precessando ? 'Pausar' : 'Retomar'} animação do qubit`}
+          >
+            <Pausa pausado={!precessando} />
+            {precessando ? 'Pausar' : 'Retomar'}
+          </button>
+        </div>
       )}
-    </>
+    </div>
   )
 }
