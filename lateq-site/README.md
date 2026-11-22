@@ -28,10 +28,10 @@ O servidor abre em `http://localhost:5173/`.
 
 A barra inferior permite combinar a arte do topo, a tipografia da marca e a paleta de cores. A URL registra as escolhas.
 
-- `/`: cena 3D do átomo com quatro órbitas.
-- `/qubit`: esfera de Bloch em WebGL (Three.js).
+- `/`: esfera de Bloch interativa em WebGL (Three.js), com arrasto 3D e portas quânticas.
+- `/qubit`: redireciona para a esfera de Bloch.
 - `/fundo`: fundo da paleta selecionada, sem cena 3D.
 - `?logo=adobe|madimi|audex|corpta|bc-civitas`: alterna entre a marca desenhada no Adobe Express (`adobe`, padrão) e as fontes de comparação. Madimi One e BC Civitas Medium usam os kits Adobe Fonts `vpr6fng` e `vxo6zlk`, respectivamente.
 - `?paleta=verde|dourado`: seleciona Verde (padrão) ou Dourado.
 
-As seções Publicações e Contato ainda usam texto provisório.
+A seção Contato ainda usa texto provisório.
