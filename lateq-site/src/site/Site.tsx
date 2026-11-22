@@ -4,6 +4,7 @@ import { ExternalLink, Icon } from '../components/ExternalLink'
 import { Logo, type VarianteLogo } from '../components/Logo'
 import { ArteHero } from '../components/ArteHero'
 import type { Arte } from '../components/ArteHero'
+import { SimuladorBloch } from '../components/SimuladorBloch'
 import { GaleriaMembros } from '../components/GaleriaMembros'
 import { useScrollMotion } from './useScrollMotion'
 
@@ -19,15 +20,14 @@ const menu = [
   { id: 'sobre', rotulo: 'Sobre' },
   { id: 'membros', rotulo: 'Membros' },
   { id: 'noticias', rotulo: 'Notícias' },
-  { id: 'publicacoes', rotulo: 'Publicações' },
+  { id: 'recursos', rotulo: 'Recursos' },
   { id: 'parceiros', rotulo: 'Parceiros' },
   { id: 'contato', rotulo: 'Contato' },
 ]
 const idsSecoes = menu.map((m) => m.id)
 
 const versoes: { rota: string; rotulo: string; arte: Arte | null }[] = [
-  { rota: '/', rotulo: 'Átomo', arte: 'atomo' },
-  { rota: '/qubit', rotulo: 'Com qubit', arte: 'qubit' },
+  { rota: '/', rotulo: 'Esfera de Bloch', arte: 'qubit' },
   { rota: '/fundo', rotulo: 'Só fundo', arte: null },
 ]
 
@@ -99,16 +99,21 @@ export function Site({ arte }: { arte: Arte | null }) {
               tabIndex={-1}
               aria-labelledby="titulo"
             >
-              {arte && <ArteHero key={arte} arte={arte} paleta={paleta} />}
-              <div className="hero-copy">
-                <h1 id="titulo" data-intro>
-                  <Logo variante={variante} className="lateq--hero" />
-                </h1>
-                <div className="actions" data-intro>
-                  <a className="pill" href="#sobre" onClick={ir('sobre')}>
-                    Conhecer a liga <Icon name="arrow-down" />
-                  </a>
+              <div className="hero-grid">
+                <div className="hero-copy">
+                  <h1 id="titulo" data-intro>
+                    <Logo variante={variante} className="lateq--hero" />
+                  </h1>
+                  <div className="actions" data-intro>
+                    <a className="pill" href="#sobre" onClick={ir('sobre')}>
+                      Conhecer o laboratório <Icon name="arrow-down" />
+                    </a>
+                    <a className="pill" href="#recursos" onClick={ir('recursos')}>
+                      Simulador quântico <Icon name="arrow-down" />
+                    </a>
+                  </div>
                 </div>
+                {arte && <ArteHero key={arte} arte={arte} paleta={paleta} />}
               </div>
             </section>
 
@@ -187,14 +192,60 @@ export function Site({ arte }: { arte: Arte | null }) {
               </div>
             </section>
 
-            <section className="section band" id="publicacoes" tabIndex={-1} aria-labelledby="publicacoes-titulo">
+            <section className="section band" id="recursos" tabIndex={-1} aria-labelledby="recursos-titulo">
               <div className="wrap">
-                <h2 id="publicacoes-titulo">
-                  Publicações
-                </h2>
-                <p className="empty" data-reveal>
-                  As publicações do laboratório serão listadas aqui.
+                <h2 id="recursos-titulo">Recursos</h2>
+                <p data-reveal>
+                  Ferramentas, referências e ambientes de desenvolvimento utilizados nas pesquisas e estudos do LATEQ.
                 </p>
+                <SimuladorBloch paleta={paleta} />
+                <div className="recursos-grid">
+                  <article className="recurso-card" data-reveal>
+                    <span className="recurso-tag">Simulação &amp; SDKs</span>
+                    <h3>Qiskit &amp; IBM Quantum</h3>
+                    <p>
+                      Kit de desenvolvimento em Python para construção, simulação e execução de circuitos quânticos.
+                    </p>
+                    <ExternalLink className="recurso-link" href="https://www.ibm.com/quantum/qiskit">
+                      Acessar documentação
+                    </ExternalLink>
+                  </article>
+
+                  <article className="recurso-card" data-reveal>
+                    <span className="recurso-tag">Aprendizado de Máquina</span>
+                    <h3>PennyLane</h3>
+                    <p>
+                      Biblioteca voltada a algoritmos híbridos variacionais (VQE, QAOA) e aprendizado de máquina
+                      quântico.
+                    </p>
+                    <ExternalLink className="recurso-link" href="https://pennylane.ai/">
+                      Explorar plataforma
+                    </ExternalLink>
+                  </article>
+
+                  <article className="recurso-card" data-reveal>
+                    <span className="recurso-tag">Estudos &amp; Fundamentos</span>
+                    <h3>IBM Quantum Learning</h3>
+                    <p>
+                      Trilhas introdutórias sobre qubits, portas quânticas, emaranhamento e algoritmos fundamentais.
+                    </p>
+                    <ExternalLink className="recurso-link" href="https://learning.quantum.ibm.com/">
+                      Ver trilhas de estudo
+                    </ExternalLink>
+                  </article>
+
+                  <article className="recurso-card" data-reveal>
+                    <span className="recurso-tag">Visualização Interativa</span>
+                    <h3>Quirk</h3>
+                    <p>
+                      Simulador visual no navegador para testar portas lógicas, superposição e estados na esfera de
+                      Bloch.
+                    </p>
+                    <ExternalLink className="recurso-link" href="https://algassert.com/quirk">
+                      Abrir simulador
+                    </ExternalLink>
+                  </article>
+                </div>
               </div>
             </section>
 
