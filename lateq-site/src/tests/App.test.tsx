@@ -26,7 +26,7 @@ describe('site do LATEQ', () => {
       'Sobre',
       'Membros',
       'Notícias',
-      'Publicações',
+      'Recursos',
       'Parceiros',
       'Contato',
     ])
@@ -61,22 +61,15 @@ describe('site do LATEQ', () => {
     expect(abertura?.querySelector('img[src*="quasar"]')).not.toBeInTheDocument()
   })
 
-  it('alterna entre a foto do grupo e a do seminário em Membros', async () => {
+  it('mostra apenas a foto do grupo em Membros, sem carrossel', () => {
     renderAt('/fundo')
     const galeria = within(screen.getByRole('region', { name: 'Galeria de Membros' }))
-    const anterior = galeria.getByRole('button', { name: 'Imagem anterior' })
-    const proxima = galeria.getByRole('button', { name: 'Próxima imagem' })
+    const fotos = galeria.getAllByRole('img')
 
-    expect(galeria.getAllByRole('img', { hidden: true })).toHaveLength(2)
-    expect(galeria.getByRole('img', { name: /centro de informática da ufpb/i })).toBeInTheDocument()
-    expect(galeria.getByRole('status')).toHaveTextContent('1 de 2')
-    await userEvent.click(proxima)
-    expect(galeria.getByRole('img', { name: /seminário interno/i })).toBeInTheDocument()
-    expect(galeria.getByRole('status')).toHaveTextContent('2 de 2')
-    await userEvent.click(proxima)
-    expect(galeria.getByRole('status')).toHaveTextContent('1 de 2')
-    await userEvent.click(anterior)
-    expect(galeria.getByRole('status')).toHaveTextContent('2 de 2')
+    expect(fotos).toHaveLength(1)
+    expect(fotos[0]).toHaveAccessibleName(/centro de informática da ufpb/i)
+    expect(galeria.queryByRole('button', { name: /imagem anterior|próxima imagem/i })).not.toBeInTheDocument()
+    expect(galeria.queryByText(/seminário interno/i)).not.toBeInTheDocument()
   })
 
   it('usa a marca escolhida no cabeçalho, na abertura e no rodapé', () => {
@@ -178,21 +171,33 @@ describe('site do LATEQ', () => {
     expect(document.querySelector('.hero')).toHaveClass('sem-arte')
   })
 
-  it('a versão padrão abre com o átomo como primeira opção', () => {
+  it('a versão padrão abre com a esfera de Bloch como primeira opção', () => {
     renderAt('/')
-    expect(document.querySelector('.arte-atomo')).toBeInTheDocument()
-    expect(document.querySelector('.hero')).toHaveClass('hero-atomo')
+    expect(document.querySelector('.qubit-art')).toHaveClass('arte-qubit')
+    expect(document.querySelector('.hero')).toHaveClass('hero-qubit')
     const nav = screen.getByRole('navigation', { name: /versões do protótipo/i })
-    expect(within(nav).getAllByRole('link').map((a) => a.textContent)).toEqual(['Átomo', 'Com qubit', 'Só fundo'])
-    expect(within(nav).getByRole('link', { name: 'Átomo' })).toHaveAttribute('aria-current', 'page')
+    expect(within(nav).getAllByRole('link').map((a) => a.textContent)).toEqual(['Esfera de Bloch', 'Só fundo'])
+    expect(within(nav).getByRole('link', { name: 'Esfera de Bloch' })).toHaveAttribute('aria-current', 'page')
   })
 
-  it('a versão do qubit usa a própria arte e marca o link no dock', () => {
-    renderAt('/qubit')
-    expect(document.querySelector('.qubit-art')).toBeInTheDocument()
-    expect(document.querySelector('.arte-atomo')).not.toBeInTheDocument()
-    expect(document.querySelector('.hero')).toHaveClass('hero-qubit')
-    expect(screen.getByRole('link', { name: 'Com qubit' })).toHaveAttribute('aria-current', 'page')
+  it('o botão da abertura convida a conhecer o laboratório', () => {
+    renderAt('/')
+    const link = screen.getByRole('link', { name: /Conhecer o laboratório/i })
+    expect(link).toHaveAttribute('href', '#sobre')
+  })
+
+  it('a seção Recursos reúne as ferramentas do laboratório', () => {
+    renderAt('/fundo')
+    const recursos = screen.getByRole('region', { name: 'Recursos' })
+    expect(within(recursos).getAllByRole('article')).toHaveLength(4)
+    expect(within(recursos).getByRole('link', { name: /Acessar documentação/i })).toHaveAttribute(
+      'href',
+      'https://www.ibm.com/quantum/qiskit',
+    )
+    expect(within(recursos).getByRole('link', { name: /Abrir simulador/i })).toHaveAttribute(
+      'href',
+      'https://algassert.com/quirk',
+    )
   })
 
   it('rotas desconhecidas voltam para a página única', () => {
