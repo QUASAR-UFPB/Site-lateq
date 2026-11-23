@@ -19,7 +19,7 @@ describe('site do LATEQ', () => {
     ).toBeInTheDocument()
   })
 
-  it('o menu segue a ordem pedida', () => {
+  it('mostra Experimentos logo depois de Publicações na página e no menu', () => {
     renderAt('/')
     const nav = screen.getByRole('navigation', { name: /menu principal/i })
     expect(within(nav).getAllByRole('link').map((a) => a.textContent)).toEqual([
@@ -27,9 +27,25 @@ describe('site do LATEQ', () => {
       'Membros',
       'Notícias',
       'Publicações',
+      'Experimentos',
       'Parceiros',
       'Contato',
     ])
+    const publicacoes = screen.getByRole('region', { name: 'Publicações' })
+    expect(publicacoes.nextElementSibling).toBe(screen.getByRole('region', { name: 'Experimentos' }))
+  })
+
+  it('exibe a seção Experimentos com texto descritivo e foco pelo menu', async () => {
+    const usuario = userEvent.setup()
+    renderAt('/fundo')
+    const nav = within(screen.getByRole('navigation', { name: 'Menu principal' }))
+    const link = nav.getByRole('link', { name: 'Experimentos' })
+    const secao = screen.getByRole('region', { name: 'Experimentos' })
+
+    expect(link).toHaveAttribute('href', '#experimentos')
+    await usuario.click(link)
+    expect(secao).toHaveFocus()
+    expect(within(secao).getByText(/ambientes computacionais/i)).toBeInTheDocument()
   })
 
   it('exibe as duas notícias lado a lado com título e imagem na seção Notícias', () => {
@@ -168,6 +184,9 @@ describe('site do LATEQ', () => {
     const linkCi = within(parceiros).getByRole('link', { name: /Centro de Informática \(CI\)/i })
     expect(linkCi).toHaveAttribute('href', 'https://www.ci.ufpb.br/')
     expect(linkCi.querySelector('img[src="/assets/logo-ci.png"]')).toBeInTheDocument()
+
+    expect(within(parceiros).getByText('Quasar')).toBeInTheDocument()
+    expect(parceiros.querySelector('img[src="/assets/logo-quasar.png"]')).toBeInTheDocument()
   })
 
   it('o menu leva à seção e move o foco para ela', async () => {

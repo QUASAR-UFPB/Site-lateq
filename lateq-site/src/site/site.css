@@ -541,10 +541,11 @@ img {
 .noticias-lista {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 2rem;
-  max-width: 54rem;
+  gap: 2.5rem;
+  max-width: 56rem;
   margin-inline: auto;
   align-items: start;
+  text-align: left;
 }
 .noticia {
   margin: 0;
@@ -552,8 +553,8 @@ img {
 .noticia-link {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
-  color: var(--fg);
+  gap: 0.75rem;
+  color: inherit;
   text-decoration: none;
 }
 .noticia-link img {
@@ -562,20 +563,27 @@ img {
   height: auto;
   aspect-ratio: 16 / 10;
   object-fit: cover;
-  border-radius: 0.75rem;
-  border: 1px solid var(--line);
+  border-radius: 0.5rem;
+}
+.noticia-fonte {
+  display: block;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--acento);
+  letter-spacing: 0.02em;
 }
 .noticia-titulo {
   margin: 0;
-  font-size: clamp(1.05rem, 1.6vw, 1.25rem);
-  line-height: 1.35;
+  font-size: 1.15rem;
+  line-height: 1.4;
   font-weight: 600;
   text-wrap: balance;
+  color: #111315;
+  transition: color 0.2s ease;
 }
 .noticia-link:hover .noticia-titulo {
-  text-decoration: underline;
-  text-underline-offset: 0.2em;
-  text-decoration-thickness: 1.5px;
+  color: var(--acento);
+  text-decoration: none;
 }
 
 .partners {
@@ -584,31 +592,61 @@ img {
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 2rem 4rem;
+  gap: 2.5rem 3.5rem;
   align-items: flex-start;
   justify-content: center;
 }
 .partners li {
   display: flex;
 }
-.partners a {
+.partners a,
+.partners .partner-item {
   display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  color: var(--fg);
+  width: clamp(150px, 22vw, 200px);
+  gap: 0.85rem;
+  color: inherit;
   text-decoration: none;
+  text-align: center;
+}
+.partner-media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 96px;
+}
+.partners img {
+  display: block;
+  max-height: 86px;
+  max-width: 92px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}
+.partner-quasar .partner-media img {
+  max-height: 96px;
+  max-width: 96px;
 }
 .partner-name {
+  display: inline-flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.35rem;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  text-align: center;
+  min-height: 2.7rem;
+}
+.partners a .partner-name {
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 0.25em;
 }
-.partners img {
-  display: block;
-  height: 70px;
-  width: auto;
-  object-fit: contain;
+.partners .partner-item .partner-name {
+  text-decoration: none;
+  font-weight: 500;
 }
 
 .section .actions {

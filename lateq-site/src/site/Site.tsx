@@ -20,6 +20,7 @@ const menu = [
   { id: 'membros', rotulo: 'Membros' },
   { id: 'noticias', rotulo: 'Notícias' },
   { id: 'publicacoes', rotulo: 'Publicações' },
+  { id: 'experimentos', rotulo: 'Experimentos' },
   { id: 'parceiros', rotulo: 'Parceiros' },
   { id: 'contato', rotulo: 'Contato' },
 ]
@@ -120,11 +121,12 @@ export function Site({ arte }: { arte: Arte | null }) {
                 </h2>
                 <p data-reveal>
                   O Laboratório de Tecnologias Quânticas (LATEQ) é um grupo de pesquisa da Universidade Federal da
-                  Paraíba (UFPB) que estuda as possibilidades de aplicação da computação quântica em diferentes áreas
-                  do conhecimento. Nosso trabalho busca compreender como as propriedades dos sistemas quânticos podem
-                  ser utilizadas para representar e processar informações, aproximando conceitos da física e da
-                  computação. A partir desses estudos, procuramos entender em quais problemas essa tecnologia pode ser
-                  útil, como ela pode ser aplicada e quais são suas limitações.
+                  Paraíba (UFPB) dedicado ao estudo da computação quântica e de suas possíveis aplicações em diferentes
+                  áreas da computação, como aprendizado de máquina (Machine Learning), redes neurais e otimização
+                  combinatória. Nossas pesquisas exploram como as propriedades dos sistemas quânticos podem ser
+                  utilizadas para representar e processar informações, combinando conhecimentos da física e da
+                  computação. O laboratório também conta com a Liga Acadêmica Quasar e com a participação de diversos
+                  orientadores, reunindo diferentes pessoas em torno do estudo e da pesquisa em tecnologias quânticas.
                 </p>
               </div>
             </section>
@@ -158,6 +160,7 @@ export function Site({ arte }: { arte: Arte | null }) {
                         loading="lazy"
                         decoding="async"
                       />
+                      <span className="noticia-fonte">G1 Paraíba</span>
                       <h3 className="noticia-titulo">
                         Primeiros computadores quânticos da América Latina chegam à Paraíba e vão ser instalados em João
                         Pessoa <Icon name="arrow-out" />
@@ -178,6 +181,7 @@ export function Site({ arte }: { arte: Arte | null }) {
                         loading="lazy"
                         decoding="async"
                       />
+                      <span className="noticia-fonte">Paraíba Business</span>
                       <h3 className="noticia-titulo">
                         Ciquanta abrirá computadores quânticos para empresas da Paraíba e negocia parcerias com bancos{' '}
                         <Icon name="arrow-out" />
@@ -199,7 +203,18 @@ export function Site({ arte }: { arte: Arte | null }) {
               </div>
             </section>
 
-            <section className="section" id="parceiros" tabIndex={-1} aria-labelledby="parceiros-titulo">
+            <section className="section" id="experimentos" tabIndex={-1} aria-labelledby="experimentos-titulo">
+              <div className="wrap">
+                <h2 id="experimentos-titulo">
+                  Experimentos
+                </h2>
+                <p data-reveal>
+                  Ambientes computacionais, algoritmos e demonstrações experimentais desenvolvidos no laboratório serão disponibilizados aqui.
+                </p>
+              </div>
+            </section>
+
+            <section className="section band" id="parceiros" tabIndex={-1} aria-labelledby="parceiros-titulo">
               <div className="wrap">
                 <h2 id="parceiros-titulo">
                   Parceiros
@@ -207,7 +222,9 @@ export function Site({ arte }: { arte: Arte | null }) {
                 <ul className="partners" role="list">
                   <li data-reveal>
                     <ExternalLink href="https://www.ufpb.br/" hideIcon>
-                      <img src="/assets/brasao-ufpb.png" width="52" height="70" alt="" />
+                      <span className="partner-media">
+                        <img src="/assets/brasao-ufpb.png" width="62" height="86" alt="" />
+                      </span>
                       <span className="partner-name">
                         Universidade Federal da Paraíba (UFPB) <Icon name="arrow-out" />
                       </span>
@@ -215,17 +232,29 @@ export function Site({ arte }: { arte: Arte | null }) {
                   </li>
                   <li data-reveal>
                     <ExternalLink href="https://www.ci.ufpb.br/" hideIcon>
-                      <img src="/assets/logo-ci.png" width="70" height="70" alt="" />
+                      <span className="partner-media">
+                        <img src="/assets/logo-ci.png" width="86" height="86" alt="" />
+                      </span>
                       <span className="partner-name">
                         Centro de Informática (CI) <Icon name="arrow-out" />
                       </span>
                     </ExternalLink>
                   </li>
+                  <li data-reveal>
+                    <div className="partner-item partner-quasar">
+                      <span className="partner-media">
+                        <img src="/assets/logo-quasar.png" width="92" height="92" alt="Brasão da Quasar" />
+                      </span>
+                      <span className="partner-name">
+                        Quasar
+                      </span>
+                    </div>
+                  </li>
                 </ul>
               </div>
             </section>
 
-            <section className="section band contact" id="contato" tabIndex={-1} aria-labelledby="contato-titulo">
+            <section className="section contact" id="contato" tabIndex={-1} aria-labelledby="contato-titulo">
               <div className="wrap">
                 <h2 id="contato-titulo">
                   Fale com o LATEQ
