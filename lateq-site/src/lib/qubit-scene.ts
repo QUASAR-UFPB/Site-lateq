@@ -29,6 +29,7 @@ export function criarQubit(
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 20)
   camera.position.set(0, 0, 4.4)
+  camera.updateMatrixWorld()
   const bloch = new THREE.Group()
   const GIRO_INICIAL = 0.5
   bloch.rotation.set(0.38, GIRO_INICIAL, 0)
@@ -156,13 +157,14 @@ export function criarQubit(
   const mundo = new THREE.Vector3()
 
   const desenhar = () => {
-    bloch.rotation.y = GIRO_INICIAL + decorrido * 0.04
+    if (descartado) return
     const atual = posicaoEstado(decorrido)
+    bloch.rotation.y = GIRO_INICIAL + decorrido * 0.04
+    preencherRastro(decorrido)
     vetorGeo.attributes.position.setXYZ(1, atual.x, atual.y, atual.z)
     vetorGeo.attributes.position.needsUpdate = true
     ponta.position.copy(atual)
     aura.position.copy(atual)
-    preencherRastro(decorrido)
     rotuloEstado.posicao.copy(atual).multiplyScalar(1.1).add(new THREE.Vector3(0.07, 0.1, 0))
     bloch.updateMatrixWorld(true)
     for (const r of rotulos) {
@@ -192,28 +194,61 @@ export function criarQubit(
     else if (!descartado) desenhar()
   }
 
-  const resize = new ResizeObserver(([entry]) => {
-    largura = Math.max(1, entry.contentRect.width)
-    altura = Math.max(1, entry.contentRect.height)
+  const ajustarTamanho = (w: number, h: number) => {
+    largura = Math.max(1, w)
+    altura = Math.max(1, h)
     renderer.setSize(largura, altura)
     camera.aspect = largura / altura
     camera.updateProjectionMatrix()
     desenhar()
-  })
-  resize.observe(host)
-  const intersecao = new IntersectionObserver(([entry]) => {
-    visivel = entry.isIntersecting
-    sincronizar()
-  })
-  intersecao.observe(host)
-  document.addEventListener('visibilitychange', sincronizar)
+  }
+  const resize = typeof ResizeObserver === 'function'
+    ? new ResizeObserver(([entry]) => ajustarTamanho(entry.contentRect.width, entry.contentRect.height))
+    : null
+  const intersecao = typeof IntersectionObserver === 'function'
+    ? new IntersectionObserver(([entry]) => {
+      visivel = entry.isIntersecting
+      sincronizar()
+    })
+    : null
   const contextoPerdido = (event: Event) => {
     event.preventDefault()
     onFailure()
   }
-  renderer.domElement.addEventListener('webglcontextlost', contextoPerdido)
-  aplicarCores()
-  sincronizar()
+  const dispose = () => {
+    if (descartado) return
+    descartado = true
+    cancelAnimationFrame(frame)
+    resize?.disconnect()
+    intersecao?.disconnect()
+    document.removeEventListener('visibilitychange', sincronizar)
+    renderer.domElement.removeEventListener('webglcontextlost', contextoPerdido)
+    const geometrias = new Set<THREE.BufferGeometry>()
+    const materiais = new Set<THREE.Material>()
+    scene.traverse((o) => {
+      if (o instanceof THREE.Mesh || o instanceof THREE.Line) {
+        geometrias.add(o.geometry)
+        ;(Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => materiais.add(m))
+      }
+    })
+    geometrias.forEach((g) => g.dispose())
+    materiais.forEach((m) => m.dispose())
+    renderer.dispose()
+    renderer.domElement.remove()
+    rotulos.forEach((r) => r.el.remove())
+  }
+  try {
+    resize?.observe(host)
+    intersecao?.observe(host)
+    document.addEventListener('visibilitychange', sincronizar)
+    renderer.domElement.addEventListener('webglcontextlost', contextoPerdido)
+    aplicarCores()
+    ajustarTamanho(host.clientWidth, host.clientHeight)
+    sincronizar()
+  } catch (erro) {
+    dispose()
+    throw erro
+  }
 
   return {
     atualizarCores() {
@@ -224,26 +259,6 @@ export function criarQubit(
       pausado = valor
       sincronizar()
     },
-    dispose() {
-      descartado = true
-      cancelAnimationFrame(frame)
-      resize.disconnect()
-      intersecao.disconnect()
-      document.removeEventListener('visibilitychange', sincronizar)
-      renderer.domElement.removeEventListener('webglcontextlost', contextoPerdido)
-      const geometrias = new Set<THREE.BufferGeometry>()
-      const materiais = new Set<THREE.Material>()
-      scene.traverse((o) => {
-        if (o instanceof THREE.Mesh || o instanceof THREE.Line) {
-          geometrias.add(o.geometry)
-          ;(Array.isArray(o.material) ? o.material : [o.material]).forEach((m) => materiais.add(m))
-        }
-      })
-      geometrias.forEach((g) => g.dispose())
-      materiais.forEach((m) => m.dispose())
-      renderer.dispose()
-      renderer.domElement.remove()
-      rotulos.forEach((r) => r.el.remove())
-    },
+    dispose,
   }
 }
