@@ -4,22 +4,17 @@ const RASTRO = 140
 
 const VERTEX = `varying vec3 n; void main(){ n=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`
 
-const circulo = (raio: number, eixo: 'x' | 'y' | 'z', passos = 128) =>
-  Array.from({ length: passos }, (_, i) => {
+const circulo = (raio: number, eixo: 'y' | 'z') => {
+  const passos = 128
+  return Array.from({ length: passos }, (_, i) => {
     const a = (i / passos) * Math.PI * 2
     const c = Math.cos(a) * raio
     const s = Math.sin(a) * raio
-    return eixo === 'y' ? new THREE.Vector3(c, 0, s) : eixo === 'x' ? new THREE.Vector3(0, c, s) : new THREE.Vector3(c, s, 0)
+    return eixo === 'y' ? new THREE.Vector3(c, 0, s) : new THREE.Vector3(c, s, 0)
   })
+}
 
-const estado = (theta: number, phi: number, raio = 1) =>
-  new THREE.Vector3(Math.sin(theta) * Math.cos(phi), Math.cos(theta), Math.sin(theta) * Math.sin(phi)).multiplyScalar(raio)
-
-export function criarQubit(
-  host: HTMLElement,
-  labelHost: HTMLElement,
-  onFailure: () => void,
-) {
+export function criarQubit(host: HTMLElement, labelHost: HTMLElement, onFailure: () => void) {
   const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: 'low-power' })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5))
   renderer.setClearColor(0x000000, 0)
@@ -97,11 +92,9 @@ export function criarQubit(
   )
   bloch.add(aura)
 
-  const rastroPos = new Float32Array(RASTRO * 3)
-  const rastroCor = new Float32Array(RASTRO * 3)
   const rastroGeo = new THREE.BufferGeometry()
-  rastroGeo.setAttribute('position', new THREE.BufferAttribute(rastroPos, 3))
-  rastroGeo.setAttribute('color', new THREE.BufferAttribute(rastroCor, 3))
+  rastroGeo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(RASTRO * 3), 3))
+  rastroGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(RASTRO * 3), 3))
   bloch.add(new THREE.Line(rastroGeo, new THREE.LineBasicMaterial({ vertexColors: true })))
 
   const aplicarCores = () => {
@@ -114,37 +107,48 @@ export function criarQubit(
     const corRastro = corCssRastro
       ? new THREE.Color(corCssRastro)
       : new THREE.Color().setRGB(0.56, 0.82, 0.65)
+    const cores = rastroGeo.getAttribute('color')
     for (let i = 0; i < RASTRO; i++) {
       const brilho = Math.pow(i / (RASTRO - 1), 1.6)
-      rastroCor.set([
+      cores.setXYZ(
+        i,
         corRastro.r + (cor.r - corRastro.r) * brilho,
         corRastro.g + (cor.g - corRastro.g) * brilho,
         corRastro.b + (cor.b - corRastro.b) * brilho,
-      ], i * 3)
+      )
     }
-    rastroGeo.attributes.color.needsUpdate = true
+    cores.needsUpdate = true
   }
 
-  const posicaoEstado = (t: number) => estado(1.15 + 0.55 * Math.sin(t * 0.21), t * 0.55, 1.004)
+  const posicaoEstado = (t: number) => {
+    const theta = 1.15 + 0.55 * Math.sin(t * 0.21)
+    const phi = t * 0.55
+    return new THREE.Vector3(
+      Math.sin(theta) * Math.cos(phi),
+      Math.cos(theta),
+      Math.sin(theta) * Math.sin(phi),
+    ).multiplyScalar(1.004)
+  }
   const preencherRastro = (t: number) => {
+    const posicoes = rastroGeo.getAttribute('position')
     for (let i = 0; i < RASTRO; i++) {
-      posicaoEstado(t - (RASTRO - 1 - i) * 0.05).toArray(rastroPos, i * 3)
+      const ponto = posicaoEstado(t - (RASTRO - 1 - i) * 0.05)
+      posicoes.setXYZ(i, ponto.x, ponto.y, ponto.z)
     }
-    rastroGeo.attributes.position.needsUpdate = true
+    posicoes.needsUpdate = true
   }
 
+  const rotuloEstado = { texto: '|ψ>', posicao: new THREE.Vector3(), el: document.createElement('span'), classe: 'destaque' }
   const rotulos = [
     { texto: '|0>', posicao: new THREE.Vector3(0, 1.34, 0), el: document.createElement('span'), classe: '' },
     { texto: '|1>', posicao: new THREE.Vector3(0, -1.34, 0), el: document.createElement('span'), classe: '' },
-    { texto: '|ψ>', posicao: new THREE.Vector3(), el: document.createElement('span'), classe: 'destaque' },
+    rotuloEstado,
   ]
   for (const r of rotulos) {
     r.el.textContent = r.texto
     if (r.classe) r.el.className = r.classe
     labelHost.appendChild(r.el)
   }
-  const rotuloEstado = rotulos[2]
-
   let largura = 1
   let altura = 1
   let frame = 0
