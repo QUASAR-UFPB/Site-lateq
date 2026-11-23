@@ -30,53 +30,52 @@ img {
 
 .site {
   --claro: #ffffff;
-  --tom-claro: #b7e5ba;
-  --tom-medio: #5ca87c;
-  --tom-intenso: #288760;
-  --tom-escuro: #1a5140;
-  --banda: color-mix(in oklab, var(--tom-claro) 22%, white);
-  --fg: var(--tom-escuro);
-  --muted: color-mix(in oklab, var(--tom-escuro) 88%, var(--tom-intenso));
-  --line: color-mix(in oklab, var(--tom-escuro) 18%, transparent);
+  --tom-claro: #f1dcb4;
+  --tom-medio: #d1a758;
+  --tom-intenso: #aa8032;
+  --tom-escuro: #78561a;
+  --banda: #f6f7f9;
+  --fg: #111315;
+  --muted: #4b525d;
+  --line: rgba(17, 19, 21, 0.08);
   --focus: var(--tom-escuro);
-  --d-bg: var(--tom-escuro);
+  --d-bg: #16181c;
   --d-fg: #ffffff;
-  --d-muted: var(--tom-claro);
-  --d-line: color-mix(in oklab, var(--tom-claro) 28%, transparent);
-  --risco: var(--tom-intenso);
+  --d-muted: #c7ccd4;
+  --d-line: rgba(255, 255, 255, 0.16);
+  --risco: #9ca3af;
   --acento: var(--tom-intenso);
-  --acento-rodape: var(--tom-intenso);
-  --rodape: var(--tom-escuro);
-  --dock: color-mix(in oklab, var(--tom-escuro) 96%, black);
-  --arte-cor: var(--tom-escuro);
-  --marca-texto: var(--tom-escuro);
-  --marca-simbolo-a: var(--tom-escuro);
-  --marca-simbolo-b: var(--tom-intenso);
-  --marca-simbolo-c: var(--tom-medio);
-  --marca-hero-c: var(--tom-medio);
-  --marca-rodape-c: var(--tom-intenso);
+  --arte-cor: #9e7528;
+  --arte-nucleo: #d9ae52;
+  --arte-rastro: #e0be78;
   --offset: 76px;
   --dock-distancia: 1rem;
   --bg: var(--claro);
-  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   color: var(--fg);
   background: var(--bg);
-  line-height: 1.6;
+  line-height: 1.7;
   font-size: 1.0625rem;
   -webkit-font-smoothing: antialiased;
 }
-.site[data-paleta='dourado'] {
-  --tom-claro: #dbc094;
-  --tom-medio: #d3af37;
-  --tom-intenso: #745515;
-  --tom-escuro: #473617;
-  --risco: var(--tom-medio);
-  --acento-rodape: var(--tom-medio);
-  --arte-rastro: var(--tom-medio);
-  --marca-hero-c: color-mix(in oklab, var(--tom-intenso) 82%, var(--tom-medio));
-  --marca-rodape-c: color-mix(in oklab, var(--tom-medio) 80%, var(--tom-intenso));
+.site[data-paleta='verde'] {
+  --tom-claro: #b8ebd9;
+  --tom-medio: #4eb897;
+  --tom-intenso: #198768;
+  --tom-escuro: #0d5240;
+  --arte-cor: var(--tom-escuro);
+  --arte-nucleo: var(--tom-escuro);
+  --arte-rastro: #5fc7a7;
 }
-.footer,
+.site[data-paleta='azul'] {
+  --tom-claro: #c4ddf6;
+  --tom-medio: #528fc9;
+  --tom-intenso: #1f64ad;
+  --tom-escuro: #133a63;
+  --arte-cor: var(--tom-escuro);
+  --arte-nucleo: var(--tom-escuro);
+  --arte-rastro: #72abe2;
+}
 .dock {
   --bg: var(--d-bg);
   --fg: var(--d-fg);
@@ -123,14 +122,14 @@ img {
 }
 
 .topbar {
-  --muted: var(--tom-escuro);
-  --line: color-mix(in oklab, var(--tom-escuro) 14%, transparent);
+  --muted: #22252a;
+  --line: rgba(17, 19, 21, 0.09);
   position: fixed;
   inset: 0 0 auto 0;
   z-index: 50;
   background: #ffffff;
   border-bottom: 1px solid var(--line);
-  box-shadow: 0 2px 12px color-mix(in oklab, var(--tom-escuro) 6%, transparent);
+  box-shadow: 0 2px 12px rgba(17, 19, 21, 0.05);
 }
 .topbar-inner {
   display: flex;
@@ -155,10 +154,10 @@ img {
   position: relative;
   color: var(--muted);
   text-decoration: none;
-  font-size: 0.875rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
   padding: 0.35rem 0;
   transition: color 0.2s;
 }
@@ -184,11 +183,12 @@ img {
 }
 
 .lateq {
+  --marca-cor: #26292e;
   display: inline-flex;
   flex-direction: row;
   align-items: center;
   gap: 0.7em;
-  color: var(--fg);
+  color: var(--marca-cor);
   font-size: 1.75rem;
   --sub: 0.3em;
 }
@@ -199,32 +199,32 @@ img {
   letter-spacing: 0.03em;
 }
 .lateq--madimi .lateq-txt {
-  font-family: 'madimi-one', 'IBM Plex Sans', sans-serif;
+  font-family: 'madimi-one', 'Plus Jakarta Sans', sans-serif;
 }
 .lateq--corpta .lateq-txt {
-  font-family: 'Corpta', 'IBM Plex Sans', sans-serif;
+  font-family: 'Corpta', 'Plus Jakarta Sans', sans-serif;
 }
 .lateq--audex .lateq-txt {
-  font-family: 'Audex', 'IBM Plex Sans', sans-serif;
+  font-family: 'Audex', 'Plus Jakarta Sans', sans-serif;
   letter-spacing: 0.01em;
 }
 .lateq--bc-civitas .lateq-txt {
-  font-family: 'bc-civitas', 'IBM Plex Sans', sans-serif;
+  font-family: 'bc-civitas', 'Plus Jakarta Sans', sans-serif;
   font-weight: 500;
 }
 .lateq-sub {
   display: flex;
   flex-direction: column;
   padding-left: 0.9em;
-  border-left: 1px solid var(--line);
-  font-family: 'IBM Plex Sans', sans-serif;
+  border-left: 1px solid color-mix(in oklab, var(--marca-cor) 26%, transparent);
+  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: var(--sub);
   font-weight: 500;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   line-height: 1.35;
   white-space: nowrap;
-  color: var(--fg);
+  color: var(--marca-cor);
 }
 .lateq--topo {
   font-size: 1.9rem;
@@ -242,15 +242,7 @@ img {
   flex: none;
   width: var(--largura-marca, 9.25rem);
   aspect-ratio: 970 / 276;
-  background:
-    linear-gradient(
-      135deg,
-      var(--marca-simbolo-a, #ffffff) 0%,
-      var(--marca-simbolo-b, #ffffff) 52%,
-      var(--marca-simbolo-c, #ffffff) 100%
-    )
-      left center / 23% 100% no-repeat,
-    linear-gradient(to right, transparent 23%, var(--marca-texto, #ffffff) 23%);
+  background: var(--marca-cor);
   mask: url('/assets/lateq-adobe-bold.png') center / contain no-repeat;
 }
 .lateq--rodape.lateq--adobe {
@@ -261,9 +253,9 @@ img {
 }
 
 .hero {
-  --bg: var(--tom-claro);
-  --line: color-mix(in oklab, var(--tom-escuro) 22%, transparent);
-  --marca-simbolo-c: var(--marca-hero-c);
+  --bg: color-mix(in oklab, var(--tom-claro) 40%, var(--claro));
+  --fg: var(--tom-escuro);
+  --muted: color-mix(in oklab, var(--tom-escuro) 84%, var(--tom-intenso));
   position: relative;
   display: flex;
   align-items: center;
@@ -273,12 +265,23 @@ img {
   padding: 7rem 0 clamp(6.5rem, 10vw, 8.5rem);
   color: var(--fg);
   background:
-    radial-gradient(50% 90% at 82% 48%, color-mix(in oklab, var(--tom-intenso) 22%, transparent) 0%, transparent 70%),
+    radial-gradient(50% 90% at 82% 48%, color-mix(in oklab, var(--tom-intenso) 10%, transparent) 0%, transparent 70%),
     linear-gradient(
       100deg,
-      color-mix(in oklab, var(--tom-claro) 55%, white) 0%,
-      var(--tom-claro) 46%,
-      color-mix(in oklab, var(--tom-medio) 78%, var(--tom-claro)) 100%
+      color-mix(in oklab, var(--tom-claro) 20%, var(--claro)) 0%,
+      var(--bg) 48%,
+      color-mix(in oklab, var(--tom-medio) 36%, var(--claro)) 100%
+    );
+}
+.site[data-paleta='dourado'] .hero {
+  --bg: color-mix(in oklab, var(--tom-claro) 52%, var(--claro));
+  background:
+    radial-gradient(50% 90% at 82% 48%, color-mix(in oklab, var(--tom-intenso) 14%, transparent) 0%, transparent 70%),
+    linear-gradient(
+      100deg,
+      color-mix(in oklab, var(--tom-claro) 28%, var(--claro)) 0%,
+      var(--bg) 48%,
+      color-mix(in oklab, var(--tom-medio) 48%, var(--claro)) 100%
     );
 }
 .hero::before {
@@ -322,33 +325,30 @@ img {
 .pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.6rem;
-  min-height: 48px;
-  padding: 0.7rem 1.5rem;
-  border: 1.5px solid var(--fg);
-  border-radius: 999px;
+  gap: 0.55rem;
+  min-height: 44px;
+  padding: 0.65rem 1.35rem;
+  border: 1px solid var(--fg);
+  border-radius: 8px;
   color: var(--fg);
   background: transparent;
-  font-size: 0.875rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.9375rem;
+  font-weight: 500;
+  letter-spacing: normal;
+  text-transform: none;
   text-decoration: none;
   transition:
-    background 0.2s,
-    color 0.2s;
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
-.pill:hover {
-  background: var(--fg);
-  color: var(--bg);
-}
+.pill:hover,
 .pill.solid {
   background: var(--fg);
   color: var(--bg);
 }
 .pill.solid:hover {
-  background: transparent;
-  color: var(--fg);
+  background: color-mix(in oklab, var(--fg) 88%, var(--tom-intenso));
 }
 .icon {
   width: 1.1em;
@@ -439,9 +439,9 @@ img {
 
 .section {
   --bg: var(--claro);
-  padding: clamp(4rem, 9vw, 7rem) 0;
+  padding: clamp(4.5rem, 8vw, 6.5rem) 0;
   background: var(--bg);
-  color: var(--fg);
+  color: #000;
   text-align: center;
 }
 .section.band {
@@ -449,44 +449,36 @@ img {
 }
 .section h2 {
   margin: 0 0 1.5rem;
-  font-size: clamp(1.9rem, 4.2vw, 3rem);
-  line-height: 1.08;
-  font-weight: 700;
-  letter-spacing: -0.015em;
+  font-size: clamp(2rem, 3.8vw, 2.75rem);
+  line-height: 1.15;
+  font-weight: 600;
+  letter-spacing: -0.02em;
   text-wrap: balance;
 }
 .section h2::before {
   content: '';
   display: block;
-  width: min(100%, clamp(12rem, 32vw, 24rem));
-  height: 5px;
-  margin: 0 auto 1.5rem;
+  width: min(100%, 5.5rem);
+  height: 1.5px;
+  margin: 0 auto 1.35rem;
   background: var(--risco);
   transform: scaleX(var(--progresso-risco, 1));
-  transform-origin: left center;
+  transform-origin: center center;
 }
 .section p {
-  margin: 0 auto 1rem;
-  max-width: 62ch;
+  margin: 0 auto 1.25rem;
+  max-width: 58ch;
+  line-height: 1.75;
 }
 
 .empty {
-  padding: 2.5rem 0;
-  border-block: 1px solid var(--line);
-  font-size: 1.125rem;
+  padding: 1.5rem 0;
+  font-size: 1.05rem;
 }
 
-#membros {
-  background: linear-gradient(
-    180deg,
-    color-mix(in oklab, var(--tom-claro) 36%, white),
-    color-mix(in oklab, var(--tom-claro) 48%, white)
-  );
-  border-block: 1px solid color-mix(in oklab, var(--tom-intenso) 24%, transparent);
-}
 .galeria-membros {
-  --altura-disponivel: calc(100svh - var(--offset) - var(--altura-dock, 46px) - 17.75rem);
-  width: min(100%, 56rem, max(37rem, calc(var(--altura-disponivel) * 16 / 9)));
+  --altura-disponivel: calc(100svh - var(--offset) - var(--altura-dock, 46px) - 10.5rem);
+  width: min(100%, 66rem, max(48rem, calc(var(--altura-disponivel) * 16 / 9)));
   margin-inline: auto;
 }
 .galeria-quadro {
@@ -495,10 +487,9 @@ img {
   position: relative;
   overflow: hidden;
   aspect-ratio: 16 / 9;
-  background: var(--banda);
-  border-radius: 1rem;
-  border: 1.5px solid color-mix(in oklab, var(--risco) 35%, var(--line));
-  box-shadow: 0 18px 42px -16px color-mix(in oklab, var(--fg) 22%, transparent);
+  background: var(--claro);
+  border-radius: 0.5rem;
+  box-shadow: 0 12px 32px -16px rgba(17, 19, 21, 0.12);
 }
 .galeria-slide {
   --indice-galeria: 0;
@@ -514,39 +505,37 @@ img {
   position: absolute;
   display: block;
   max-width: none;
+  filter: contrast(1.03) saturate(1.05);
 }
 .galeria-controles {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 1rem;
-  margin-top: 1rem;
-  color: var(--muted);
+  gap: 1.25rem;
+  margin-top: 1.25rem;
   font-size: 0.875rem;
-  font-weight: 600;
+  color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
 .galeria-controles button {
   display: inline-grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   padding: 0;
-  border: 1.5px solid color-mix(in oklab, var(--fg) 28%, transparent);
-  border-radius: 50%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
   background: var(--claro);
   color: var(--fg);
-  font-size: 1.125rem;
+  font-size: 1rem;
   cursor: pointer;
   transition:
-    background 0.2s,
-    color 0.2s,
-    border-color 0.2s;
+    background 0.2s ease,
+    border-color 0.2s ease;
 }
 .galeria-controles button:hover {
-  background: var(--fg);
-  color: var(--claro);
-  border-color: var(--fg);
+  background: var(--banda);
+  border-color: rgba(17, 19, 21, 0.2);
 }
 
 .noticias-lista {
@@ -629,13 +618,9 @@ img {
   margin-top: 1.5rem;
 }
 .footer {
-  --acento: var(--acento-rodape);
-  --marca-texto: #ffffff;
-  --marca-simbolo-a: var(--tom-claro);
-  --marca-simbolo-b: var(--tom-medio);
-  --marca-simbolo-c: var(--marca-rodape-c);
+  --bg: var(--banda);
   border-top: 1px solid var(--line);
-  background: var(--rodape);
+  background: var(--bg);
   padding: 2.5rem 0 calc(var(--altura-dock, 46px) + var(--dock-distancia) + 1rem);
 }
 .footer-inner {
@@ -656,7 +641,7 @@ img {
   width: 44px;
   min-height: 44px;
   padding: 0;
-  border: 1px solid var(--line);
+  border: 1px solid color-mix(in oklab, var(--fg) 55%, var(--bg));
   border-radius: 999px;
   background: transparent;
   color: var(--fg);
@@ -687,23 +672,23 @@ img {
   align-items: center;
   padding: 3px;
   border: 1px solid var(--line);
-  border-radius: 999px;
-  background: var(--dock);
+  border-radius: 8px;
+  background: var(--bg);
 }
 .versoes-rotulo {
-  padding: 0 0.4rem 0 0.85rem;
+  padding: 0 0.5rem 0 0.75rem;
   color: var(--muted);
-  font-size: 0.6875rem;
+  font-size: 0.72rem;
   font-weight: 600;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 .versoes a {
   display: inline-flex;
   align-items: center;
-  min-height: 38px;
-  padding: 0.3rem 0.9rem;
-  border-radius: 999px;
+  min-height: 32px;
+  padding: 0.25rem 0.75rem;
+  border-radius: 6px;
   color: var(--muted);
   font-size: 0.8125rem;
   font-weight: 500;
@@ -785,13 +770,15 @@ img {
     left: 0.5rem;
     right: 0.5rem;
   }
-  .dock-variantes {
+  .dock-variantes,
+  .dock > .versoes {
     max-width: 100%;
     flex-wrap: nowrap;
     overflow-x: auto;
     scrollbar-width: none;
   }
-  .dock-variantes > * {
+  .dock-variantes > *,
+  .dock > .versoes > * {
     flex: none;
   }
 }

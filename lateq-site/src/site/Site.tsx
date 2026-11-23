@@ -32,8 +32,9 @@ const versoes: { rota: string; rotulo: string; arte: Arte | null }[] = [
 ]
 
 const paletas = [
-  { id: 'verde', rotulo: 'Verde' },
   { id: 'dourado', rotulo: 'Dourado' },
+  { id: 'verde', rotulo: 'Verde' },
+  { id: 'azul', rotulo: 'Azul' },
 ]
 
 export function Site({ arte }: { arte: Arte | null }) {

@@ -105,7 +105,7 @@ export function criarQubit(
 
   const aplicarCores = () => {
     const estilos = getComputedStyle(host)
-    cor.set(estilos.getPropertyValue('--arte-cor').trim() || '#1a5140')
+    cor.set(estilos.getPropertyValue('--arte-cor').trim() || '#0d5240')
     for (const material of [fino, forte, eixoMat, vetor.material, ponta.material, aura.material]) {
       material.color.copy(cor)
     }

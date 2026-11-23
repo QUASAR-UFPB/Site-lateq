@@ -32,6 +32,6 @@ A barra inferior permite combinar a arte do topo, a tipografia da marca e a pale
 - `/qubit`: esfera de Bloch em WebGL (Three.js).
 - `/fundo`: fundo da paleta selecionada, sem cena 3D.
 - `?logo=adobe|madimi|audex|corpta|bc-civitas`: alterna entre a marca desenhada no Adobe Express (`adobe`, padrão) e as fontes de comparação. Madimi One e BC Civitas Medium usam os kits Adobe Fonts `vpr6fng` e `vxo6zlk`, respectivamente.
-- `?paleta=verde|dourado`: seleciona Verde (padrão) ou Dourado.
+- `?paleta=dourado|verde|azul`: seleciona Dourado (padrão), Verde ou Azul.
 
 As seções Publicações e Contato ainda usam texto provisório.

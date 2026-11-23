@@ -71,8 +71,11 @@ export function criarAtomo(host: HTMLElement, onFailure: () => void) {
   scene.add(nucleo)
 
   const aplicarCores = () => {
-    cor.set(getComputedStyle(host).getPropertyValue('--arte-cor').trim() || '#1a5140')
-    nucleo.material.color.copy(cor)
+    const estilos = getComputedStyle(host)
+    cor.set(estilos.getPropertyValue('--arte-cor').trim() || '#6b4f12')
+    const corNucleo = estilos.getPropertyValue('--arte-nucleo').trim()
+    if (corNucleo) nucleo.material.color.set(corNucleo)
+    else nucleo.material.color.copy(cor)
   }
 
   let frame = 0
