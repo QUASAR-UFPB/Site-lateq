@@ -22,7 +22,7 @@ O servidor abre em `http://localhost:5173/`.
 | `npm run build` | Confere os tipos com `tsc -b` e gera o build em `dist/`. |
 | `npm run preview` | Serve localmente o conteúdo de `dist/`. |
 | `npm run lint` | Roda o `oxlint` no projeto. |
-| `npx vitest run` | Executa a suíte em `src/tests/App.test.tsx`. |
+| `npx vitest run` | Executa os testes unitários e de componentes com o Vitest. |
 
 ## Rotas e variações
 
