@@ -86,7 +86,8 @@ export function useScrollMotion(secoes: string[]) {
       ScrollTrigger.create({
         trigger: '#membros',
         start: 'top top+=1',
-        end: fimTransparencia,
+        endTrigger: '.galeria-membros',
+        end: () => `top top+=${alturaTopo()}`,
         toggleClass: { targets: topo, className: 'topbar--sobre-membros' },
       })
     }
