@@ -653,13 +653,35 @@ img {
   font-size: 1.05rem;
 }
 
+.section--esquerda {
+  text-align: left;
+}
+.section--esquerda h2::before {
+  margin-left: 0;
+  transform-origin: left center;
+}
+.section--esquerda p {
+  margin-inline: 0;
+}
+#noticias .wrap,
+#recursos .wrap {
+  width: min(56rem, 100% - 3rem);
+}
+.section--ampla {
+  padding-block: clamp(5.5rem, 11vw, 8.5rem);
+}
+.section--compacta {
+  padding-block: clamp(3rem, 5vw, 4rem);
+}
+
 #membros {
   --focus: var(--claro);
   --risco: var(--claro);
   position: relative;
   isolation: isolate;
   overflow: clip;
-  padding-top: max(clamp(4.5rem, 8vw, 6.5rem), calc(var(--offset) + 1rem));
+  --altura-onda: clamp(40px, 5.5vw, 72px);
+  padding-top: calc(max(clamp(4.5rem, 8vw, 6.5rem), calc(var(--offset) + 1rem)) + var(--altura-onda));
   scroll-margin-top: 0;
   background: var(--d-bg);
   color: var(--claro);
@@ -678,6 +700,16 @@ img {
 }
 #membros::after {
   background: linear-gradient(to bottom, rgb(0 0 0 / 80%), rgb(0 0 0 / 50%), rgb(0 0 0 / 90%));
+}
+
+.onda-membros {
+  position: absolute;
+  inset: -1px 0 auto 0;
+  z-index: 0;
+  height: var(--altura-onda);
+  pointer-events: none;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 96' preserveAspectRatio='none'%3E%3Cpath d='M0 0H1440V44C1000 26 520 96 0 72Z' fill='%23ffffff' fill-opacity='0.18'/%3E%3Cpath d='M0 0H1440V22C1020 6 520 80 0 50Z' fill='%23ffffff'/%3E%3C/svg%3E")
+    top center / 100% 100% no-repeat;
 }
 
 .galeria-membros {

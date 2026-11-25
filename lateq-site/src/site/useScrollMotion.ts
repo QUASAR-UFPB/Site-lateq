@@ -84,7 +84,7 @@ export function useScrollMotion(secoes: string[]) {
       })
       ScrollTrigger.create({
         trigger: '#membros',
-        start: 'top top+=1',
+        start: () => `top+=${(el.querySelector<HTMLElement>('.onda-membros')?.offsetHeight ?? 0) + 1} top`,
         endTrigger: '.galeria-membros',
         end: () => `top top+=${alturaTopo()}`,
         toggleClass: { targets: topo, className: 'topbar--sobre-membros' },
@@ -110,7 +110,7 @@ export function useScrollMotion(secoes: string[]) {
     const media = gsap.matchMedia()
     media.add({ all: 'all', movimentoReduzido: '(prefers-reduced-motion: reduce)' }, ({ conditions }) => {
       const movimentoReduzido = conditions?.movimentoReduzido
-      el.querySelectorAll<HTMLElement>('.section > .wrap > h2').forEach((titulo) => {
+      el.querySelectorAll<HTMLElement>('.section h2').forEach((titulo) => {
         gsap.fromTo(titulo, { '--progresso-risco': 0, opacity: 0, y: movimentoReduzido ? 0 : 12 }, {
           '--progresso-risco': 1,
           opacity: 1,

@@ -135,24 +135,29 @@ export function Site({ arte }: { arte: Arte | null }) {
               )}
             </section>
 
-            <section className="section" id="sobre" tabIndex={-1} aria-labelledby="sobre-titulo">
+            <section className="section section--ampla" id="sobre" tabIndex={-1} aria-labelledby="sobre-titulo">
               <div className="wrap">
                 <h2 id="sobre-titulo">
                   Sobre o LATEQ
                 </h2>
                 <p data-reveal>
-                  O Laboratório de Tecnologias Quânticas (LATEQ) é um grupo de pesquisa da Universidade Federal da
-                  Paraíba (UFPB) dedicado ao estudo da computação quântica e de suas possíveis aplicações em diferentes
-                  áreas da computação, como aprendizado de máquina (Machine Learning), redes neurais e otimização
-                  combinatória. Nossas pesquisas exploram como as propriedades dos sistemas quânticos podem ser
-                  utilizadas para representar e processar informações, combinando conhecimentos da física e da
-                  computação. O laboratório também conta com a Liga Acadêmica Quasar e com a participação de diversos
-                  orientadores, reunindo diferentes pessoas em torno do estudo e da pesquisa em tecnologias quânticas.
+                  O Laboratório de Tecnologias Quânticas (LATEQ) é um grupo de pesquisa da Universidade
+                  Federal da Paraíba (UFPB) dedicado ao estudo da computação quântica e de suas possíveis
+                  aplicações em diferentes áreas da computação, como aprendizado de máquina (Machine
+                  Learning), redes neurais e otimização combinatória.
+                </p>
+                <p data-reveal>
+                  Nossas pesquisas exploram como as propriedades dos sistemas quânticos podem ser utilizadas
+                  para representar e processar informações, combinando conhecimentos da física e da
+                  computação. O laboratório também conta com a Liga Acadêmica Quasar e com a participação de
+                  diversos orientadores, reunindo diferentes pessoas em torno do estudo e da pesquisa em
+                  tecnologias quânticas.
                 </p>
               </div>
             </section>
 
             <section className="section band" id="membros" tabIndex={-1} aria-labelledby="membros-titulo">
+              <div className="onda-membros" aria-hidden="true" />
               <div className="wrap">
                 <h2 id="membros-titulo">
                   Membros
@@ -161,7 +166,7 @@ export function Site({ arte }: { arte: Arte | null }) {
               </div>
             </section>
 
-            <section className="section" id="noticias" tabIndex={-1} aria-labelledby="noticias-titulo">
+            <section className="section section--esquerda" id="noticias" tabIndex={-1} aria-labelledby="noticias-titulo">
               <div className="wrap">
                 <h2 id="noticias-titulo">
                   Notícias
@@ -213,7 +218,7 @@ export function Site({ arte }: { arte: Arte | null }) {
               </div>
             </section>
 
-            <section className="section" id="recursos" tabIndex={-1} aria-labelledby="recursos-titulo">
+            <section className="section section--esquerda" id="recursos" tabIndex={-1} aria-labelledby="recursos-titulo">
               <div className="wrap" id="experimentos">
                 <h2 id="recursos-titulo">
                   Recursos
@@ -225,7 +230,7 @@ export function Site({ arte }: { arte: Arte | null }) {
               </div>
             </section>
 
-            <section className="section band" id="publicacoes" tabIndex={-1} aria-labelledby="publicacoes-titulo">
+            <section className="section band section--compacta" id="publicacoes" tabIndex={-1} aria-labelledby="publicacoes-titulo">
               <div className="wrap">
                 <h2 id="publicacoes-titulo">
                   Publicações
