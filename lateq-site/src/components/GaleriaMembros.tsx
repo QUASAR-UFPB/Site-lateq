@@ -1,7 +1,6 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { useGSAP } from '@gsap/react'
 import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Icon } from './ExternalLink'
 
 const imagens = [
@@ -25,90 +24,15 @@ export function GaleriaMembros() {
   const galeria = useRef<HTMLDivElement>(null)
   const quadro = useRef<HTMLDivElement>(null)
   const imagemAtual = useRef(0)
-  const destino = useRef<number | null>(null)
   const transicao = useRef<gsap.core.Tween | null>(null)
-  const rolagem = useRef<ScrollTrigger | undefined>(undefined)
   const { contextSafe } = useGSAP({ scope: galeria })
-
-  useEffect(() => {
-    const painel = galeria.current
-    const palco = quadro.current
-    if (!painel || !palco) return
-
-    const site = painel.closest('.site')
-    const topo = site?.querySelector('.topbar')
-    const dock = site?.querySelector('.dock')
-    const media = gsap.matchMedia(painel)
-
-    media.add({
-      all: 'all',
-      alturaSuficiente: '(min-height: 36rem)',
-      movimentoReduzido: '(prefers-reduced-motion: reduce)',
-    }, ({ conditions }) => {
-      transicao.current?.kill()
-      transicao.current = null
-      destino.current = null
-      rolagem.current = undefined
-      gsap.set(palco, { '--progresso-galeria': imagemAtual.current, '--sentido-galeria': 1 })
-      if (!conditions?.alturaSuficiente || conditions.movimentoReduzido) return
-
-      const deslizamento = gsap.fromTo(palco, { '--progresso-galeria': 0 }, {
-        '--progresso-galeria': 1,
-        ease: 'none',
-        onUpdate(this: gsap.core.Tween) {
-          const indice = Math.round(this.progress())
-          if (indice === imagemAtual.current) return
-          imagemAtual.current = indice
-          setAtiva(indice)
-        },
-        scrollTrigger: {
-          trigger: painel,
-          start: () => {
-            const limiteSuperior = topo?.getBoundingClientRect().bottom ?? 0
-            const limiteInferior = dock?.getBoundingClientRect().top ?? window.innerHeight
-            return `center ${(limiteSuperior + limiteInferior) / 2}px`
-          },
-          end: () => `+=${Math.round(palco.offsetHeight * 1.1)}`,
-          pin: true,
-          scrub: 0.18,
-          refreshPriority: 1,
-        },
-      })
-
-      rolagem.current = deslizamento.scrollTrigger
-    })
-
-    return () => {
-      media.revert()
-      rolagem.current = undefined
-    }
-  }, [])
 
   const trocarImagem = (sentido: -1 | 1) => {
     const palco = quadro.current
     if (!palco) return
 
-    const atual = destino.current ?? imagemAtual.current
+    const atual = imagemAtual.current
     const proxima = (atual + sentido + imagens.length) % imagens.length
-    const gatilho = rolagem.current
-    if (gatilho) {
-      transicao.current?.kill()
-      destino.current = proxima
-      const limparDestino = () => {
-        transicao.current = null
-        destino.current = null
-      }
-      transicao.current = gsap.to(window, {
-        scrollTo: { y: proxima === 0 ? gatilho.start : gatilho.end, autoKill: true },
-        duration: duracaoTroca,
-        ease: 'sine.inOut',
-        overwrite: 'auto',
-        onComplete: limparDestino,
-        onInterrupt: limparDestino,
-      })
-      return
-    }
-
     const emCurso = transicao.current
     if (emCurso) {
       emCurso.kill()
