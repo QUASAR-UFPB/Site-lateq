@@ -99,7 +99,7 @@ export function criarQubit(host: HTMLElement, labelHost: HTMLElement, onFailure:
 
   const aplicarCores = () => {
     const estilos = getComputedStyle(host)
-    cor.set(estilos.getPropertyValue('--arte-cor').trim() || '#0d5240')
+    cor.set(estilos.getPropertyValue('--arte-cor').trim() || '#0d7053')
     for (const material of [fino, forte, eixoMat, vetor.material, ponta.material, aura.material]) {
       material.color.copy(cor)
     }
@@ -255,10 +255,6 @@ export function criarQubit(host: HTMLElement, labelHost: HTMLElement, onFailure:
   }
 
   return {
-    atualizarCores() {
-      aplicarCores()
-      desenhar()
-    },
     setPausado(valor: boolean) {
       pausado = valor
       sincronizar()

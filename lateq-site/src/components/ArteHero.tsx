@@ -3,7 +3,6 @@ import { useEffect, useRef, useState } from 'react'
 export type Arte = 'qubit' | 'atomo'
 
 type Cena = {
-  atualizarCores: () => void
   setPausado: (v: boolean) => void
   dispose: () => void
 }
@@ -16,7 +15,7 @@ const Pausa = ({ pausado }: { pausado: boolean }) => (
   </svg>
 )
 
-export function ArteHero({ arte, paleta }: { arte: Arte; paleta: string }) {
+export function ArteHero({ arte }: { arte: Arte }) {
   const host = useRef<HTMLDivElement>(null)
   const rotulos = useRef<HTMLDivElement>(null)
   const cena = useRef<Cena | null>(null)
@@ -52,10 +51,6 @@ export function ArteHero({ arte, paleta }: { arte: Arte; paleta: string }) {
       cena.current = null
     }
   }, [arte])
-
-  useEffect(() => {
-    cena.current?.atualizarCores()
-  }, [paleta])
 
   const alternar = () => {
     cena.current?.setPausado(!pausado)

@@ -72,7 +72,7 @@ export function criarAtomo(host: HTMLElement, onFailure: () => void) {
 
   const aplicarCores = () => {
     const estilos = getComputedStyle(host)
-    cor.set(estilos.getPropertyValue('--arte-cor').trim() || '#6b4f12')
+    cor.set(estilos.getPropertyValue('--arte-cor').trim() || '#0d7053')
     const corNucleo = estilos.getPropertyValue('--arte-nucleo').trim()
     if (corNucleo) nucleo.material.color.set(corNucleo)
     else nucleo.material.color.copy(cor)
@@ -140,10 +140,6 @@ export function criarAtomo(host: HTMLElement, onFailure: () => void) {
   sincronizar()
 
   return {
-    atualizarCores() {
-      aplicarCores()
-      desenhar()
-    },
     setPausado(valor: boolean) {
       pausado = valor
       sincronizar()

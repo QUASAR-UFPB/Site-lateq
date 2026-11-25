@@ -26,12 +26,11 @@ O servidor abre em `http://localhost:5173/`.
 
 ## Rotas e variações
 
-A barra inferior permite combinar a arte do topo, a tipografia da marca e a paleta de cores. A URL registra as escolhas.
+A barra inferior permite alternar o fundo da abertura e a tipografia da marca. Em Fundo3, também é possível escolher a arte da abertura. A URL registra as escolhas.
 
-- `/`: cena 3D do átomo com quatro órbitas.
-- `/qubit`: esfera de Bloch em WebGL (Three.js).
-- `/fundo`: fundo da paleta selecionada, sem cena 3D.
+- `/` ou `?fundo=introducao`: versão padrão Fundo1, com a esfera de Bloch interativa e atalhos para Sobre e Recursos.
+- `?fundo=atual`: versão Fundo2 com o degradê animado.
+- `/?fundo=antigo`, `/qubit?fundo=antigo` e `/fundo?fundo=antigo`: versão Fundo3 com as opções Átomo, Com qubit e Só fundo.
 - `?logo=adobe|madimi|audex|corpta|bc-civitas`: alterna entre a marca desenhada no Adobe Express (`adobe`, padrão) e as fontes de comparação. Madimi One e BC Civitas Medium usam os kits Adobe Fonts `vpr6fng` e `vxo6zlk`, respectivamente.
-- `?paleta=dourado|verde|azul`: seleciona Dourado (padrão), Verde ou Azul.
 
 As seções Publicações e Contato ainda usam texto provisório.

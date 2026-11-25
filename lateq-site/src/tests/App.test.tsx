@@ -19,33 +19,34 @@ describe('site do LATEQ', () => {
     ).toBeInTheDocument()
   })
 
-  it('mostra Experimentos logo depois de Publicações na página e no menu', () => {
+  it('mostra Recursos logo antes de Publicações na página e no menu', () => {
     renderAt('/')
     const nav = screen.getByRole('navigation', { name: /menu principal/i })
     expect(within(nav).getAllByRole('link').map((a) => a.textContent)).toEqual([
       'Sobre',
       'Membros',
       'Notícias',
+      'Recursos',
       'Publicações',
-      'Experimentos',
       'Parceiros',
       'Contato',
     ])
     const publicacoes = screen.getByRole('region', { name: 'Publicações' })
-    expect(publicacoes.nextElementSibling).toBe(screen.getByRole('region', { name: 'Experimentos' }))
+    expect(publicacoes.previousElementSibling).toBe(screen.getByRole('region', { name: 'Recursos' }))
   })
 
-  it('exibe a seção Experimentos com texto descritivo e foco pelo menu', async () => {
+  it('leva o foco a Recursos pelo menu e exibe o simulador nessa seção', async () => {
     const usuario = userEvent.setup()
     renderAt('/fundo')
     const nav = within(screen.getByRole('navigation', { name: 'Menu principal' }))
-    const link = nav.getByRole('link', { name: 'Experimentos' })
-    const secao = screen.getByRole('region', { name: 'Experimentos' })
+    const link = nav.getByRole('link', { name: 'Recursos' })
+    const secao = screen.getByRole('region', { name: 'Recursos' })
 
-    expect(link).toHaveAttribute('href', '#experimentos')
+    expect(link).toHaveAttribute('href', '#recursos')
     await usuario.click(link)
     expect(secao).toHaveFocus()
     expect(within(secao).getByText(/ambientes computacionais/i)).toBeInTheDocument()
+    expect(within(secao).getByRole('heading', { name: 'Esfera de Bloch' })).toBeInTheDocument()
   })
 
   it('exibe as duas notícias lado a lado com título e imagem na seção Notícias', () => {
@@ -75,6 +76,53 @@ describe('site do LATEQ', () => {
     const abertura = document.getElementById('inicio')
     expect(abertura).not.toHaveTextContent(/encontro|palestrante|quasar/i)
     expect(abertura?.querySelector('img[src*="quasar"]')).not.toBeInTheDocument()
+  })
+
+  it('pausa a animação suave do fundo fora da área visível ou com a aba oculta', () => {
+    const observar = vi.fn()
+    const desconectar = vi.fn()
+    let notificar: ((entradas: { isIntersecting: boolean }[]) => void) | undefined
+    vi.stubGlobal('IntersectionObserver', class {
+      observe = observar
+      disconnect = desconectar
+
+      constructor(callback: typeof notificar) {
+        notificar = callback
+      }
+    })
+    const matchMediaOriginal = window.matchMedia
+    const preferencia = vi.spyOn(window, 'matchMedia').mockImplementation((consulta) => ({
+      ...matchMediaOriginal(consulta),
+      matches: consulta === '(prefers-reduced-motion: reduce)',
+    }))
+    const abaOculta = vi.spyOn(document, 'hidden', 'get').mockReturnValue(false)
+    try {
+      const site = renderAt('/fundo')
+      const abertura = screen.getByRole('region', { name: 'LATEQ, Laboratório de Tecnologias Quânticas' })
+
+      expect(observar).toHaveBeenCalledWith(abertura)
+      notificar?.([{ isIntersecting: true }])
+      expect(abertura).toHaveAttribute('data-ramificacoes-ativas')
+
+      abaOculta.mockReturnValue(true)
+      document.dispatchEvent(new Event('visibilitychange'))
+      expect(abertura).not.toHaveAttribute('data-ramificacoes-ativas')
+
+      abaOculta.mockReturnValue(false)
+      document.dispatchEvent(new Event('visibilitychange'))
+      expect(abertura).toHaveAttribute('data-ramificacoes-ativas')
+
+      notificar?.([{ isIntersecting: false }])
+      expect(abertura).not.toHaveAttribute('data-ramificacoes-ativas')
+
+      site.unmount()
+      expect(desconectar).toHaveBeenCalled()
+    } finally {
+      cleanup()
+      abaOculta.mockRestore()
+      preferencia.mockRestore()
+      vi.unstubAllGlobals()
+    }
   })
 
   it('alterna entre a foto do grupo e a do seminário em Membros', async () => {
@@ -133,41 +181,59 @@ describe('site do LATEQ', () => {
     const seletor = screen.getByRole('navigation', { name: 'Versões do logotipo' })
     expect(within(seletor).getByRole('link', { name: 'Adobe Express' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByRole('heading', { level: 1 }).querySelector('.lateq--adobe .lateq-marca')).toBeInTheDocument()
-    expect(document.querySelector('.hero')).toHaveClass('sem-arte')
   })
 
-  it('seleciona BC Civitas Medium sem mudar a paleta', async () => {
-    renderAt('/fundo?paleta=dourado')
+  it('seleciona BC Civitas Medium sem mudar a arte', async () => {
+    renderAt('/fundo?fundo=atual')
     const seletor = within(screen.getByRole('navigation', { name: 'Versões do logotipo' }))
     const civitas = seletor.getByRole('link', { name: 'BC Civitas Medium' })
 
-    expect(civitas).toHaveAttribute('href', '/fundo?paleta=dourado&logo=bc-civitas')
+    expect(civitas).toHaveAttribute('href', '/fundo?fundo=atual&logo=bc-civitas')
     await userEvent.click(civitas)
     expect(civitas).toHaveAttribute('aria-current', 'page')
     expect(document.querySelector('.lateq--bc-civitas .lateq-txt')).toHaveTextContent('LATEQ')
-    expect(screen.getByRole('link', { name: 'Dourado' })).toHaveAttribute('aria-current', 'page')
+    expect(document.querySelector('.hero')).toHaveClass('sem-arte')
   })
 
-  it('alterna entre paletas na mesma versão de arte e logotipo', async () => {
-    renderAt('/fundo?logo=corpta&paleta=desconhecida')
-    const paletas = within(screen.getByRole('navigation', { name: 'Paletas de cores' }))
-    const dourado = paletas.getByRole('link', { name: 'Dourado' })
-    const verde = paletas.getByRole('link', { name: 'Verde' })
-    const azul = paletas.getByRole('link', { name: 'Azul' })
+  it('abre Fundo1 por padrão e permite alternar para os outros fundos', async () => {
+    renderAt('/fundo?logo=corpta')
+    const seletor = within(screen.getByRole('navigation', { name: 'Fundos da abertura' }))
+    const fundo2 = seletor.getByRole('link', { name: 'Fundo2' })
+    const fundo3 = seletor.getByRole('link', { name: 'Fundo3' })
+    const fundo1 = seletor.getByRole('link', { name: 'Fundo1' })
 
-    expect(paletas.getAllByRole('link').map((link) => link.textContent)).toEqual(['Dourado', 'Verde', 'Azul'])
-    expect(dourado).toHaveAttribute('aria-current', 'page')
-    expect(verde).toHaveAttribute('href', '/fundo?logo=corpta&paleta=verde')
-    expect(azul).toHaveAttribute('href', '/fundo?logo=corpta&paleta=azul')
-    await userEvent.click(verde)
-    expect(verde).toHaveAttribute('aria-current', 'page')
-    expect(screen.getByRole('link', { name: 'Corpta' })).toHaveAttribute('aria-current', 'page')
+    expect(seletor.getAllByRole('link').map((link) => link.textContent)).toEqual(['Fundo1', 'Fundo2', 'Fundo3'])
+    expect(fundo1).toHaveAttribute('aria-current', 'page')
+    expect(document.querySelector('.site')).toHaveAttribute('data-fundo', 'introducao')
+    expect(fundo3).toHaveAttribute('href', '/fundo?logo=corpta&fundo=antigo')
+    await userEvent.click(fundo3)
+    expect(fundo3).toHaveAttribute('aria-current', 'page')
+    expect(document.querySelector('.site')).toHaveAttribute('data-fundo', 'antigo')
     expect(screen.getByRole('link', { name: 'Só fundo' })).toHaveAttribute('aria-current', 'page')
-    await userEvent.click(azul)
-    expect(azul).toHaveAttribute('aria-current', 'page')
-    expect(document.querySelector('.site')).toHaveAttribute('data-paleta', 'azul')
-    await userEvent.click(dourado)
-    expect(dourado).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Com qubit' })).toHaveAttribute('href', '/qubit?logo=corpta&fundo=antigo')
+    expect(screen.getByRole('link', { name: 'Corpta' })).toHaveAttribute('aria-current', 'page')
+
+    expect(fundo1).toHaveAttribute('href', '/fundo?logo=corpta&fundo=introducao')
+    await userEvent.click(fundo1)
+    const abertura = within(screen.getByRole('region', { name: 'LATEQ, Laboratório de Tecnologias Quânticas' }))
+    expect(fundo1).toHaveAttribute('aria-current', 'page')
+    expect(abertura.getByRole('link', { name: 'Conhecer o laboratório' })).toHaveAttribute('href', '#sobre')
+    expect(abertura.getByRole('link', { name: 'Simulador quântico' })).toHaveAttribute('href', '#recursos')
+    expect(screen.getByRole('region', { name: 'Publicações' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Corpta' })).toHaveAttribute('aria-current', 'page')
+
+    await userEvent.click(fundo2)
+    expect(fundo2).toHaveAttribute('aria-current', 'page')
+    expect(document.querySelector('.site')).toHaveAttribute('data-fundo', 'atual')
+    expect(screen.queryByRole('navigation', { name: 'Versões do protótipo' })).not.toBeInTheDocument()
+  })
+
+  it.each(['dourado', 'azul'])('abre Fundo1 e respeita o logotipo em links antigos com paleta %s', (paleta) => {
+    renderAt(`/fundo?logo=corpta&paleta=${paleta}`)
+
+    expect(screen.queryByRole('navigation', { name: 'Paletas de cores' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Corpta' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Fundo1' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('abre links externos com rel noopener e exibe logos e siglas nos parceiros', () => {
@@ -197,14 +263,16 @@ describe('site do LATEQ', () => {
     expect(within(nav).getByRole('link', { name: 'Parceiros' })).toHaveAttribute('aria-current', 'true')
   })
 
-  it('a versão "só fundo" não desenha a cena 3D', () => {
-    renderAt('/fundo')
+  it.each(['/?fundo=atual', '/qubit?fundo=atual'])('Fundo2 mostra só o fundo em %s', (rota) => {
+    renderAt(rota)
     expect(document.querySelector('.qubit-art')).not.toBeInTheDocument()
     expect(document.querySelector('.hero')).toHaveClass('sem-arte')
+    expect(screen.queryByRole('navigation', { name: 'Versões do protótipo' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Fundo2' })).toHaveAttribute('aria-current', 'page')
   })
 
-  it('a versão padrão abre com o átomo como primeira opção', () => {
-    renderAt('/')
+  it('Fundo3 oferece o átomo como primeira opção', () => {
+    renderAt('/?fundo=antigo')
     expect(document.querySelector('.arte-atomo')).toBeInTheDocument()
     expect(document.querySelector('.hero')).toHaveClass('hero-atomo')
     const nav = screen.getByRole('navigation', { name: /versões do protótipo/i })
@@ -212,8 +280,8 @@ describe('site do LATEQ', () => {
     expect(within(nav).getByRole('link', { name: 'Átomo' })).toHaveAttribute('aria-current', 'page')
   })
 
-  it('a versão do qubit usa a própria arte e marca o link no dock', () => {
-    renderAt('/qubit')
+  it('Fundo3 mantém a opção de qubit', () => {
+    renderAt('/qubit?fundo=antigo')
     expect(document.querySelector('.qubit-art')).toBeInTheDocument()
     expect(document.querySelector('.arte-atomo')).not.toBeInTheDocument()
     expect(document.querySelector('.hero')).toHaveClass('hero-qubit')

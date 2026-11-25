@@ -20,6 +20,28 @@ function topoNoLayout(el: HTMLElement) {
   return topo
 }
 
+function observarRamificacoes(raiz: HTMLElement) {
+  const abertura = raiz.querySelector<HTMLElement>('#inicio')
+  if (!abertura || typeof IntersectionObserver !== 'function') return
+
+  let visivel = false
+  const sincronizar = () => {
+    abertura.toggleAttribute('data-ramificacoes-ativas', visivel && !document.hidden)
+  }
+  const intersecao = new IntersectionObserver(([entrada]) => {
+    visivel = entrada.isIntersecting
+    sincronizar()
+  })
+  intersecao.observe(abertura)
+  document.addEventListener('visibilitychange', sincronizar)
+
+  return () => {
+    intersecao.disconnect()
+    document.removeEventListener('visibilitychange', sincronizar)
+    abertura.removeAttribute('data-ramificacoes-ativas')
+  }
+}
+
 export function useScrollMotion(secoes: string[]) {
   const raiz = useRef<HTMLDivElement>(null)
   const smoother = useRef<ScrollSmoother | null>(null)
@@ -48,6 +70,26 @@ export function useScrollMotion(secoes: string[]) {
       effects: true,
       onFocusIn: () => (focoProgramatico.current ? false : undefined),
     })
+
+    if (topo) {
+      const fimTransparencia = () => `bottom top+=${alturaTopo() + 48}`
+      const atualizarTopo = (trigger: ScrollTrigger) => {
+        topo.toggleAttribute('data-rolado', trigger.progress > 0)
+      }
+      ScrollTrigger.create({
+        trigger: '#inicio',
+        start: fimTransparencia,
+        end: 'max',
+        onUpdate: atualizarTopo,
+        onRefresh: atualizarTopo,
+      })
+      ScrollTrigger.create({
+        trigger: '#membros',
+        start: 'top top+=1',
+        end: fimTransparencia,
+        toggleClass: { targets: topo, className: 'topbar--sobre-membros' },
+      })
+    }
 
     ScrollTrigger.create({
       trigger: '#inicio',
@@ -129,14 +171,18 @@ export function useScrollMotion(secoes: string[]) {
       })
     })
 
+    const limparRamificacoes = observarRamificacoes(el)
     return () => {
+      limparRamificacoes?.()
       limparHover.forEach((fn) => fn())
       observador?.disconnect()
+      topo?.removeAttribute('data-rolado')
+      topo?.classList.remove('topbar--sobre-membros')
       smoother.current = null
     }
   }, { scope: raiz, dependencies: [secoes], revertOnUpdate: true })
 
-  const irPara = (id: string) => {
+  const irPara = (id: string, navegar = true) => {
     const alvo = document.getElementById(id)
     if (!alvo) return
     const focar = () => {
@@ -145,7 +191,9 @@ export function useScrollMotion(secoes: string[]) {
       focoProgramatico.current = false
     }
     if (smoother.current) {
-      const destino = Math.min(topoNoLayout(alvo) - alturaTopo(), ScrollTrigger.maxScroll(window))
+      const margem = Number.parseFloat(getComputedStyle(alvo).scrollMarginTop)
+      const deslocamento = Number.isNaN(margem) ? alturaTopo() : margem
+      const destino = Math.min(topoNoLayout(alvo) - deslocamento, ScrollTrigger.maxScroll(window))
       contextSafe(() => {
         gsap.to(window, {
           duration: 1.2,
@@ -154,12 +202,13 @@ export function useScrollMotion(secoes: string[]) {
           scrollTo: { y: Math.max(0, destino), autoKill: false },
         })
       })()
-      focar()
     } else {
       alvo.scrollIntoView?.({ block: 'start' })
-      focar()
     }
-    window.history.replaceState(null, '', `#${id}`)
+    if (navegar) {
+      focar()
+      window.history.replaceState(null, '', `#${id}`)
+    }
   }
 
   return { raiz, ativa, setAtiva, irPara }

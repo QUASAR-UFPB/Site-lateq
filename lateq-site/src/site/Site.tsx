@@ -1,9 +1,11 @@
-import { useEffect, type MouseEvent } from 'react'
+import type { MouseEvent } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { ExternalLink, Icon } from '../components/ExternalLink'
 import { Logo, type VarianteLogo } from '../components/Logo'
 import { ArteHero, type Arte } from '../components/ArteHero'
 import { GaleriaMembros } from '../components/GaleriaMembros'
+import { RamificacoesHero } from '../components/RamificacoesHero'
+import { SimuladorBloch } from '../components/SimuladorBloch'
 import { useScrollMotion } from './useScrollMotion'
 
 const variantesLogo: { id: VarianteLogo; rotulo: string }[] = [
@@ -18,8 +20,8 @@ const menu = [
   { id: 'sobre', rotulo: 'Sobre' },
   { id: 'membros', rotulo: 'Membros' },
   { id: 'noticias', rotulo: 'Notícias' },
+  { id: 'recursos', rotulo: 'Recursos' },
   { id: 'publicacoes', rotulo: 'Publicações' },
-  { id: 'experimentos', rotulo: 'Experimentos' },
   { id: 'parceiros', rotulo: 'Parceiros' },
   { id: 'contato', rotulo: 'Contato' },
 ]
@@ -31,28 +33,24 @@ const versoes: { rota: string; rotulo: string; arte: Arte | null }[] = [
   { rota: '/fundo', rotulo: 'Só fundo', arte: null },
 ]
 
-const paletas = [
-  { id: 'dourado', rotulo: 'Dourado' },
-  { id: 'verde', rotulo: 'Verde' },
-  { id: 'azul', rotulo: 'Azul' },
-]
+const fundos = [
+  { id: 'introducao', rotulo: 'Fundo1' },
+  { id: 'atual', rotulo: 'Fundo2' },
+  { id: 'antigo', rotulo: 'Fundo3' },
+] as const
 
 export function Site({ arte }: { arte: Arte | null }) {
-  const { pathname, search, hash } = useLocation()
+  const { pathname, search } = useLocation()
   const parametros = new URLSearchParams(search)
   const logoAtual = parametros.get('logo')
   const variante = variantesLogo.find((v) => v.id === logoAtual)?.id ?? 'adobe'
-  const paletaAtual = parametros.get('paleta')
-  const paleta = paletas.find((p) => p.id === paletaAtual)?.id ?? paletas[0].id
+  const fundo = fundos.find(({ id }) => id === parametros.get('fundo'))?.id ?? fundos[0].id
+  const introducao = fundo === 'introducao'
+  const permiteEscolherArte = fundo === 'antigo'
+  const destaque = introducao ? 'qubit' : permiteEscolherArte ? arte : null
   const { raiz, ativa, setAtiva, irPara } = useScrollMotion(idsSecoes)
 
-  useEffect(() => {
-    if (!raiz.current) return
-    const cor = getComputedStyle(raiz.current).getPropertyValue('--tom-escuro').trim()
-    if (cor) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', cor)
-  }, [paleta, raiz])
-
-  const comParam = (chave: string, valor: string) => {
+  const comParametro = (chave: 'logo' | 'fundo', valor: string) => {
     const p = new URLSearchParams(search)
     p.set(chave, valor)
     return { pathname, search: `?${p}` }
@@ -65,8 +63,31 @@ export function Site({ arte }: { arte: Arte | null }) {
     irPara(id)
   }
 
+  const mostrarAbertura = (e: MouseEvent<HTMLAnchorElement>) => {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.altKey || e.ctrlKey || e.shiftKey) return
+    if (window.scrollY > 0) irPara('inicio', false)
+  }
+
+  const textoAbertura = (
+    <div className="hero-copy">
+      <h1 id="titulo" data-intro>
+        <Logo variante={variante} className="lateq--hero" />
+      </h1>
+      <div className="actions" data-intro>
+        <a className="pill" href="#sobre" onClick={ir('sobre')}>
+          {introducao ? 'Conhecer o laboratório' : 'Conhecer a liga'} <Icon name="arrow-down" />
+        </a>
+        {introducao && (
+          <a className="pill" href="#recursos" onClick={ir('recursos')}>
+            Simulador quântico <Icon name="arrow-down" />
+          </a>
+        )}
+      </div>
+    </div>
+  )
+
   return (
-    <div className="site" data-paleta={paleta} ref={raiz}>
+    <div className="site" data-fundo={fundo} ref={raiz}>
       <a className="skip" href="#conteudo" onClick={ir('conteudo')}>
         Pular para o conteúdo
       </a>
@@ -95,22 +116,23 @@ export function Site({ arte }: { arte: Arte | null }) {
         <div id="smooth-content">
           <main id="conteudo" tabIndex={-1}>
             <section
-              className={arte ? `hero hero-${arte}` : 'hero sem-arte'}
+              className={destaque ? `hero hero-${destaque}` : 'hero sem-arte'}
               id="inicio"
               tabIndex={-1}
               aria-labelledby="titulo"
             >
-              {arte && <ArteHero key={arte} arte={arte} paleta={paleta} />}
-              <div className="hero-copy">
-                <h1 id="titulo" data-intro>
-                  <Logo variante={variante} className="lateq--hero" />
-                </h1>
-                <div className="actions" data-intro>
-                  <a className="pill" href="#sobre" onClick={ir('sobre')}>
-                    Conhecer a liga <Icon name="arrow-down" />
-                  </a>
+              <RamificacoesHero />
+              {introducao ? (
+                <div className="hero-grid">
+                  {textoAbertura}
+                  <SimuladorBloch naAbertura />
                 </div>
-              </div>
+              ) : (
+                <>
+                  {destaque && <ArteHero key={destaque} arte={destaque} />}
+                  {textoAbertura}
+                </>
+              )}
             </section>
 
             <section className="section" id="sobre" tabIndex={-1} aria-labelledby="sobre-titulo">
@@ -191,6 +213,18 @@ export function Site({ arte }: { arte: Arte | null }) {
               </div>
             </section>
 
+            <section className="section" id="recursos" tabIndex={-1} aria-labelledby="recursos-titulo">
+              <div className="wrap" id="experimentos">
+                <h2 id="recursos-titulo">
+                  Recursos
+                </h2>
+                <p data-reveal>
+                  Ambientes computacionais, algoritmos e demonstrações experimentais desenvolvidos no laboratório serão disponibilizados aqui.
+                </p>
+                <SimuladorBloch />
+              </div>
+            </section>
+
             <section className="section band" id="publicacoes" tabIndex={-1} aria-labelledby="publicacoes-titulo">
               <div className="wrap">
                 <h2 id="publicacoes-titulo">
@@ -198,17 +232,6 @@ export function Site({ arte }: { arte: Arte | null }) {
                 </h2>
                 <p className="empty" data-reveal>
                   As publicações do laboratório serão listadas aqui.
-                </p>
-              </div>
-            </section>
-
-            <section className="section" id="experimentos" tabIndex={-1} aria-labelledby="experimentos-titulo">
-              <div className="wrap">
-                <h2 id="experimentos-titulo">
-                  Experimentos
-                </h2>
-                <p data-reveal>
-                  Ambientes computacionais, algoritmos e demonstrações experimentais desenvolvidos no laboratório serão disponibilizados aqui.
                 </p>
               </div>
             </section>
@@ -286,35 +309,38 @@ export function Site({ arte }: { arte: Arte | null }) {
 
       <div className="dock">
         <div className="dock-variantes">
-          <nav className="versoes" aria-label="Versões do protótipo">
-            {versoes.map((v) => (
-              <Link key={v.rota} to={comRota(v.rota)} aria-current={v.arte === arte ? 'page' : undefined}>
-                {v.rotulo}
-              </Link>
-            ))}
-          </nav>
+          {permiteEscolherArte && (
+            <nav className="versoes" aria-label="Versões do protótipo">
+              {versoes.map((v) => (
+                <Link key={v.rota} to={comRota(v.rota)} aria-current={v.arte === arte ? 'page' : undefined}>
+                  {v.rotulo}
+                </Link>
+              ))}
+            </nav>
+          )}
           <nav className="versoes" aria-label="Versões do logotipo">
             <span className="versoes-rotulo" aria-hidden="true">
               Logo
             </span>
             {variantesLogo.map((v) => (
-              <Link key={v.id} to={comParam('logo', v.id)} aria-current={variante === v.id ? 'page' : undefined}>
+              <Link key={v.id} to={comParametro('logo', v.id)} aria-current={variante === v.id ? 'page' : undefined}>
                 {v.rotulo}
               </Link>
             ))}
           </nav>
         </div>
-        <nav className="versoes" aria-label="Paletas de cores">
+        <nav className="versoes" aria-label="Fundos da abertura">
           <span className="versoes-rotulo" aria-hidden="true">
-            Paleta
+            Fundo
           </span>
-          {paletas.map((p) => (
+          {fundos.map(({ id, rotulo }) => (
             <Link
-              key={p.id}
-              to={{ ...comParam('paleta', p.id), hash }}
-              aria-current={paleta === p.id ? 'page' : undefined}
+              key={id}
+              to={comParametro('fundo', id)}
+              onClick={mostrarAbertura}
+              aria-current={fundo === id ? 'page' : undefined}
             >
-              {p.rotulo}
+              {rotulo}
             </Link>
           ))}
         </nav>
