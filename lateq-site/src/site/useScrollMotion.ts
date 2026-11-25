@@ -4,9 +4,8 @@ import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { ScrollSmoother } from 'gsap/ScrollSmoother'
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin'
-import { SplitText } from 'gsap/SplitText'
 
-gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollSmoother, ScrollToPlugin, SplitText)
+gsap.registerPlugin(useGSAP, ScrollTrigger, ScrollSmoother, ScrollToPlugin)
 
 function alturaTopo() {
   return document.querySelector<HTMLElement>('.topbar')?.getBoundingClientRect().height ?? 76
@@ -66,7 +65,7 @@ export function useScrollMotion(secoes: string[]) {
     smoother.current = ScrollSmoother.create({
       wrapper: '#smooth-wrapper',
       content: '#smooth-content',
-      smooth: 1.2,
+      smooth: 0.7,
       effects: true,
       onFocusIn: () => (focoProgramatico.current ? false : undefined),
     })
@@ -112,28 +111,18 @@ export function useScrollMotion(secoes: string[]) {
     media.add({ all: 'all', movimentoReduzido: '(prefers-reduced-motion: reduce)' }, ({ conditions }) => {
       const movimentoReduzido = conditions?.movimentoReduzido
       el.querySelectorAll<HTMLElement>('.section > .wrap > h2').forEach((titulo) => {
-        const { chars } = SplitText.create(titulo, { type: 'words,chars', tag: 'span' })
-
-        gsap.timeline({
+        gsap.fromTo(titulo, { '--progresso-risco': 0, opacity: 0, y: movimentoReduzido ? 0 : 12 }, {
+          '--progresso-risco': 1,
+          opacity: 1,
+          y: 0,
+          ease: 'none',
           scrollTrigger: {
             trigger: titulo,
             start: 'clamp(top 88%)',
-            end: 'clamp(top 58%)',
+            end: 'clamp(top 62%)',
             scrub: movimentoReduzido ? true : 0.3,
           },
         })
-          .fromTo(titulo, { '--progresso-risco': 0 }, {
-            '--progresso-risco': 1,
-            duration: 1,
-            ease: 'none',
-          })
-          .fromTo(chars, { opacity: 0, yPercent: movimentoReduzido ? 0 : 24 }, {
-            opacity: 1,
-            yPercent: 0,
-            duration: 0.36,
-            ease: 'power2.out',
-            stagger: { amount: 0.54 },
-          }, 0.1)
       })
     })
 
@@ -141,8 +130,8 @@ export function useScrollMotion(secoes: string[]) {
       el.querySelectorAll<HTMLElement>('[data-reveal]').forEach((elemento) => {
         gsap.from(elemento, {
           opacity: 0,
-          y: 40,
-          duration: 0.6,
+          y: 16,
+          duration: 0.5,
           scrollTrigger: {
             trigger: elemento,
             start: 'top 80%',
