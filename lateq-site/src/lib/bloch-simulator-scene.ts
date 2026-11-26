@@ -10,8 +10,8 @@ const INTERVALO_LEITURA = 80 // ms
 const VERTEX = `varying vec3 n; void main(){ n=normalize(normalMatrix*normal); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`
 
 export type Complexo = { re: number; im: number }
-export type PortaQuantica = 'H' | 'X' | 'Y' | 'Z' | 'S' | 'T'
-export type EstadoPreparado = '|0>' | '|+>'
+export type PortaQuantica = 'H' | 'X' | 'Y' | 'Z' | 'S' | 'T' | 'Sdg' | 'Tdg'
+export type EstadoPreparado = '|0>' | '|1>' | '|+>' | '|->' | '|+i>' | '|-i>'
 
 export type LeituraQubit = {
   alpha: Complexo
@@ -34,6 +34,8 @@ const PORTAS: Record<PortaQuantica, { eixo: THREE.Vector3; angulo: number }> = {
   Z: { eixo: new THREE.Vector3(0, 1, 0), angulo: Math.PI },
   S: { eixo: new THREE.Vector3(0, 1, 0), angulo: Math.PI / 2 },
   T: { eixo: new THREE.Vector3(0, 1, 0), angulo: Math.PI / 4 },
+  Sdg: { eixo: new THREE.Vector3(0, 1, 0), angulo: -Math.PI / 2 },
+  Tdg: { eixo: new THREE.Vector3(0, 1, 0), angulo: -Math.PI / 4 },
   H: { eixo: new THREE.Vector3(0, 1, 1).normalize(), angulo: Math.PI },
 }
 
@@ -41,6 +43,15 @@ const EIXO_Z = new THREE.Vector3(0, 1, 0)
 const INV_SQRT2 = Math.SQRT1_2
 
 const cplx = (re: number, im = 0): Complexo => ({ re, im })
+
+const SPINORES: Record<EstadoPreparado, () => [Complexo, Complexo]> = {
+  '|0>': () => [cplx(1), cplx(0)],
+  '|1>': () => [cplx(0), cplx(1)],
+  '|+>': () => [cplx(INV_SQRT2), cplx(INV_SQRT2)],
+  '|->': () => [cplx(INV_SQRT2), cplx(-INV_SQRT2)],
+  '|+i>': () => [cplx(INV_SQRT2), cplx(0, INV_SQRT2)],
+  '|-i>': () => [cplx(INV_SQRT2), cplx(0, -INV_SQRT2)],
+}
 const somar = (a: Complexo, b: Complexo): Complexo => ({ re: a.re + b.re, im: a.im + b.im })
 const subtrair = (a: Complexo, b: Complexo): Complexo => ({ re: a.re - b.re, im: a.im - b.im })
 const escalar = (a: Complexo, k: number): Complexo => ({ re: a.re * k, im: a.im * k })
@@ -68,6 +79,10 @@ const aplicarMatriz = (porta: PortaQuantica, alpha: Complexo, beta: Complexo): [
       return [alpha, multiplicar(cplx(0, 1), beta)]
     case 'T':
       return [alpha, multiplicar(cplx(INV_SQRT2, INV_SQRT2), beta)]
+    case 'Sdg':
+      return [alpha, multiplicar(cplx(0, -1), beta)]
+    case 'Tdg':
+      return [alpha, multiplicar(cplx(INV_SQRT2, -INV_SQRT2), beta)]
     case 'H':
       return [escalar(somar(alpha, beta), INV_SQRT2), escalar(subtrair(alpha, beta), INV_SQRT2)]
   }
@@ -399,7 +414,7 @@ export function criarSimuladorBloch(
       eixo: def.eixo.clone(),
       angulo: def.angulo,
       progresso: 0,
-      duracao: Math.max(0.26, def.angulo / VELOCIDADE_PORTA),
+      duracao: Math.max(0.26, Math.abs(def.angulo) / VELOCIDADE_PORTA),
     }
     mostrarEixo(def.eixo)
     ultimoResultado = null
@@ -549,16 +564,25 @@ export function criarSimuladorBloch(
       fila.length = 0
       transicao = null
       esconderEixo()
-      if (estado === '|0>') {
-        alpha = cplx(1)
-        beta = cplx(0)
-      } else {
-        alpha = cplx(INV_SQRT2)
-        beta = cplx(INV_SQRT2)
-      }
+      const [a, b] = SPINORES[estado]()
+      alpha = a
+      beta = b
       ultimoResultado = null
       atualizarEstado()
       limparRastro(estadoAtual)
+      notificar(true)
+      sincronizar()
+    },
+    /** Coloca o qubit em cos(θ/2)|0⟩ + e^(iφ) sen(θ/2)|1⟩. */
+    definirAngulos(theta: number, phi: number) {
+      fila.length = 0
+      transicao = null
+      esconderEixo()
+      alpha = cplx(Math.cos(theta / 2))
+      beta = girar(cplx(Math.sin(theta / 2)), phi)
+      ultimoResultado = null
+      atualizarEstado()
+      empurrarRastro(estadoAtual)
       notificar(true)
       sincronizar()
     },

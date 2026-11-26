@@ -3,9 +3,13 @@ import type { criarSimuladorBloch, Complexo, EstadoPreparado, LeituraQubit, Port
 
 const Ket = ({ children }: { children: ReactNode }) => <span className="ket">|{children}⟩</span>
 
-const preparos: { id: EstadoPreparado; simbolo: string; dica: string }[] = [
-  { id: '|0>', simbolo: '0', dica: 'Preparar o estado |0⟩ e limpar o rastro' },
-  { id: '|+>', simbolo: '+', dica: 'Preparar o estado |+⟩ e limpar o rastro' },
+const preparos: { id: EstadoPreparado; simbolo: string }[] = [
+  { id: '|0>', simbolo: '0' },
+  { id: '|1>', simbolo: '1' },
+  { id: '|+>', simbolo: '+' },
+  { id: '|->', simbolo: '−' },
+  { id: '|+i>', simbolo: '+i' },
+  { id: '|-i>', simbolo: '−i' },
 ]
 
 const portas: { id: PortaQuantica; rotulo: string; dica: string }[] = [
@@ -16,6 +20,23 @@ const portas: { id: PortaQuantica; rotulo: string; dica: string }[] = [
   { id: 'S', rotulo: 'S', dica: 'Aplicar fase S: +π/2 em torno de Bz' },
   { id: 'T', rotulo: 'T', dica: 'Aplicar fase T: +π/4 em torno de Bz' },
 ]
+
+const rotuloPorta = Object.fromEntries(portas.map((p) => [p.id, p.rotulo])) as Record<PortaQuantica, string>
+
+/** Porta que desfaz cada porta (U†). S† e T† só são usadas internamente pelo Desfazer. */
+const inversas: Record<PortaQuantica, PortaQuantica> = {
+  H: 'H',
+  X: 'X',
+  Y: 'Y',
+  Z: 'Z',
+  S: 'Sdg',
+  T: 'Tdg',
+  Sdg: 'S',
+  Tdg: 'T',
+}
+
+type Passo = { tipo: 'porta'; porta: PortaQuantica } | { tipo: 'medida'; resultado: '0' | '1' }
+type Circuito = { inicio: string; passos: Passo[] }
 
 const LIMIAR = 0.005
 
@@ -68,6 +89,15 @@ export function SimuladorBloch({ naAbertura = false }: { naAbertura?: boolean })
   const [pronto, setPronto] = useState(false)
   const [precessando, setPrecessando] = useState(false)
   const [leitura, setLeitura] = useState<LeituraQubit | null>(null)
+  const [circuito, setCircuito] = useState<Circuito>({ inicio: '0', passos: [] })
+  const fio = useRef<HTMLOListElement>(null)
+
+  const [phiPolo, setPhiPolo] = useState(0)
+
+  useEffect(() => {
+    const el = fio.current
+    if (el) el.scrollLeft = el.scrollWidth
+  }, [circuito])
 
   useEffect(() => {
     let cancelado = false
@@ -90,7 +120,10 @@ export function SimuladorBloch({ naAbertura = false }: { naAbertura?: boolean })
       .then(({ criarSimuladorBloch }) => {
         if (cancelado || !host.current || !rotulos.current) return
         const atualizarLeitura = (estado: LeituraQubit) => {
-          if (!cancelado) setLeitura(estado)
+          if (cancelado) return
+          setLeitura(estado)
+          const thetaGraus = Math.round((estado.theta * 180) / Math.PI)
+          if (thetaGraus !== 0 && thetaGraus !== 180) setPhiPolo(Math.round((estado.phi * 180) / Math.PI) % 360)
         }
         cena.current = criarSimuladorBloch(host.current, rotulos.current, falhar, naAbertura ? undefined : atualizarLeitura)
         if (naAbertura) {
@@ -114,6 +147,47 @@ export function SimuladorBloch({ naAbertura = false }: { naAbertura?: boolean })
     const proximo = !precessando
     cena.current?.setPrecessao(proximo)
     setPrecessando(proximo)
+  }
+
+  const adicionarPasso = (passo: Passo) => {
+    setCircuito((atual) => ({ ...atual, passos: [...atual.passos, passo] }))
+  }
+
+  const preparar = ({ id, simbolo }: (typeof preparos)[number]) => {
+    if (!cena.current) return
+    cena.current.preparar(id)
+    setCircuito({ inicio: simbolo, passos: [] })
+  }
+
+  const aplicarPorta = (porta: PortaQuantica) => {
+    if (!cena.current) return
+    cena.current.aplicarPorta(porta)
+    adicionarPasso({ tipo: 'porta', porta })
+  }
+
+  const medir = () => {
+    const resultado = cena.current?.medir()
+    if (resultado) adicionarPasso({ tipo: 'medida', resultado })
+  }
+
+  const mudarAngulos = (thetaGraus: number, phiGraus: number) => {
+    if (!cena.current) return
+    if (precessando) {
+      cena.current.setPrecessao(false)
+      setPrecessando(false)
+    }
+    setPhiPolo(phiGraus)
+    cena.current.definirAngulos((thetaGraus * Math.PI) / 180, (phiGraus * Math.PI) / 180)
+    setCircuito((atual) => (atual.inicio === 'ψ' && atual.passos.length === 0 ? atual : { inicio: 'ψ', passos: [] }))
+  }
+
+  const ultimoPasso = circuito.passos.at(-1)
+  const podeDesfazer = ultimoPasso?.tipo === 'porta'
+
+  const desfazer = () => {
+    if (!cena.current || ultimoPasso?.tipo !== 'porta') return
+    cena.current.aplicarPorta(inversas[ultimoPasso.porta])
+    setCircuito((atual) => ({ ...atual, passos: atual.passos.slice(0, -1) }))
   }
 
   const camadas = (
@@ -156,7 +230,9 @@ export function SimuladorBloch({ naAbertura = false }: { naAbertura?: boolean })
   const pct0 = leitura ? Math.round(leitura.p0 * 100) : 100
   const pct1 = 100 - pct0
   const theta = leitura ? Math.round((leitura.theta * 180) / Math.PI) : 0
-  const phi = leitura ? Math.round((leitura.phi * 180) / Math.PI) : 0
+  const phiLido = leitura ? Math.round((leitura.phi * 180) / Math.PI) % 360 : 0
+  // Nos polos φ não é definido: o controle mantém o último φ em vez de saltar para 0.
+  const phi = theta === 0 || theta === 180 ? phiPolo : phiLido
   const termos = leitura ? formatarTermos(leitura) : []
 
   return (
@@ -214,16 +290,72 @@ export function SimuladorBloch({ naAbertura = false }: { naAbertura?: boolean })
                 <span style={{ width: `${leitura.p0 * 100}%` }} />
                 <span style={{ width: `${leitura.p1 * 100}%` }} />
               </div>
-              <div className="qubit-leitura-rodape">
-                <span className="qubit-angulos">
-                  θ {theta}° · φ {phi}°
-                </span>
-                {leitura.ultimoResultado && (
+              {leitura.ultimoResultado && (
+                <div className="qubit-leitura-rodape">
                   <span className="qubit-resultado" role="status">
                     Medido: <Ket>{leitura.ultimoResultado}</Ket>
                   </span>
+                </div>
+              )}
+            </div>
+
+            <div className="qubit-angulos" role="group" aria-label="Ângulos do estado">
+              <label className="qubit-angulo">
+                <span className="qubit-grupo-rotulo">
+                  θ <b>{theta}°</b>
+                </span>
+                <input
+                  type="range"
+                  min={0}
+                  max={180}
+                  step={1}
+                  value={theta}
+                  aria-label="Ângulo polar θ"
+                  aria-valuetext={`${theta} graus`}
+                  onChange={(e) => mudarAngulos(Number(e.target.value), phi)}
+                />
+              </label>
+              <label className="qubit-angulo">
+                <span className="qubit-grupo-rotulo">
+                  φ <b>{phi}°</b>
+                </span>
+                <input
+                  type="range"
+                  min={0}
+                  max={359}
+                  step={1}
+                  value={phi}
+                  aria-label="Ângulo azimutal φ"
+                  aria-valuetext={`${phi} graus`}
+                  onChange={(e) => mudarAngulos(theta, Number(e.target.value))}
+                />
+              </label>
+            </div>
+
+            <div className="qubit-circuito">
+              <span className="qubit-grupo-rotulo" id="qubit-circuito-rotulo">
+                Circuito
+              </span>
+              <ol className="qubit-circuito-fio" ref={fio} aria-labelledby="qubit-circuito-rotulo">
+                <li className="qubit-circuito-inicio">
+                  <Ket>{circuito.inicio}</Ket>
+                </li>
+                {circuito.passos.map((passo, i) =>
+                  passo.tipo === 'porta' ? (
+                    <li key={i} className="qubit-circuito-passo">
+                      {rotuloPorta[passo.porta]}
+                    </li>
+                  ) : (
+                    <li
+                      key={i}
+                      className="qubit-circuito-passo qubit-circuito-medida"
+                      aria-label={`Medição com resultado ${passo.resultado}`}
+                    >
+                      M<sub>{passo.resultado}</sub>
+                    </li>
+                  ),
                 )}
-              </div>
+              </ol>
             </div>
 
             <div className="qubit-controles" role="group" aria-label="Controles da esfera de Bloch">
@@ -236,9 +368,9 @@ export function SimuladorBloch({ naAbertura = false }: { naAbertura?: boolean })
                         key={p.id}
                         type="button"
                         className="qubit-porta"
-                        title={p.dica}
-                        aria-label={p.dica}
-                        onClick={() => cena.current?.preparar(p.id)}
+                        title={`Preparar o estado |${p.simbolo}⟩ e limpar o circuito`}
+                        aria-label={`Preparar o estado |${p.simbolo}⟩ e limpar o circuito`}
+                        onClick={() => preparar(p)}
                       >
                         <Ket>{p.simbolo}</Ket>
                       </button>
@@ -256,7 +388,7 @@ export function SimuladorBloch({ naAbertura = false }: { naAbertura?: boolean })
                         className="qubit-porta"
                         title={p.dica}
                         aria-label={p.dica}
-                        onClick={() => cena.current?.aplicarPorta(p.id)}
+                        onClick={() => aplicarPorta(p.id)}
                       >
                         {p.rotulo}
                       </button>
@@ -274,7 +406,7 @@ export function SimuladorBloch({ naAbertura = false }: { naAbertura?: boolean })
                       className="qubit-porta"
                       title="Medir na base computacional (regra de Born)"
                       aria-label="Medir o qubit na base computacional"
-                      onClick={() => cena.current?.medir()}
+                      onClick={medir}
                     >
                       Medir
                     </button>
@@ -286,6 +418,16 @@ export function SimuladorBloch({ naAbertura = false }: { naAbertura?: boolean })
                       data-ativa={precessando || undefined}
                     >
                       {precessando ? 'Pausar' : 'Precessão'}
+                    </button>
+                    <button
+                      type="button"
+                      className="qubit-porta"
+                      title="Desfazer a última porta aplicando a inversa dela"
+                      aria-label="Desfazer a última porta"
+                      onClick={desfazer}
+                      disabled={!podeDesfazer}
+                    >
+                      Desfazer
                     </button>
                   </div>
                 </div>
